@@ -75,7 +75,7 @@ Firewall can be used to protect: -
 *   Non-Volatile Data Segment in Flash
 *   Volatile Data Segment in RAM
 
-![](firewall_segments.png)
+![](./assets/firewall_segments.png)
 
   
 
@@ -85,7 +85,7 @@ Firewall has three states,
 *   Close: - Firewall Enabled and Protected Segment access would cause a reset
 *   Open: - Firewall Enabled and Non - Protected Segment access would cause a reset
 
-![](firewall_states.png)
+![](./assets/firewall_states.png)
 
   
 
@@ -127,7 +127,7 @@ Security Checks:-
 
   
 
-![](bootloader_security_checks.png)
+![](./assets/bootloader_security_checks.png)
 
 Following Security checks have been used:-
 

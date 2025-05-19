@@ -72,12 +72,12 @@ The device is configured as Communication Device Class (CDC). CDC is used to cre
 USB Transmit
 ============
 
-![](usb-transmit.png)
+![](./assets/usb-transmit.png)
 
 USB Receive
 ===========
 
-![](usb-receive.png)
+![](./assets/usb-receive.png)
 
   
 
@@ -86,4 +86,4 @@ USB Receive
 Sequence Diagram-
 =================
 
-![](usb-exchange-sequence-diag.png)
+![](./assets/usb-exchange-sequence-diag.png)

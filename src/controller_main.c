@@ -84,23 +84,24 @@
 #include "controller_main.h"
 
 #include <string.h>
+#include "flow_engine.h"
 
 #include "application_startup.h"
-#include "arbitrum.h"
-#include "avalanche.h"
-#include "bsc.h"
+// #include "arbitrum.h"
+// #include "avalanche.h"
+// #include "bsc.h"
 #include "chacha20poly1305.h"
 #include "communication.h"
 #include "constant_texts.h"
 #include "cryptoauthlib.h"
-#include "etc.h"
-#include "eth.h"
-#include "fantom.h"
-#include "harmony.h"
-#include "near.h"
-#include "optimism.h"
+// #include "etc.h"
+// #include "eth.h"
+// #include "fantom.h"
+// #include "harmony.h"
+// #include "near.h"
+// #include "optimism.h"
 #include "pb_decode.h"
-#include "polygon.h"
+// #include "polygon.h"
 #include "rfc7539.h"
 #include "ui_events.h"
 #include "ui_instruction.h"
@@ -145,8 +146,8 @@ char arbitrary_data[4096 / 8 + 1];
  * @brief Global Flow_level instance.
  *        Will be used in other files using getter function
  */
-Flow_level CONFIDENTIAL flow_level;
-
+// Flow_level CONFIDENTIAL flow_level;
+Flow_level flow_level;
 /**
  * @brief Global Counter instance.
  *        Will be used in other files using getter function
@@ -163,8 +164,8 @@ Flash_Wallet wallet_for_flash;
  * @brief Message data for wallet connect EIP-712 using protobuf
  *
  */
-MessageData msg_data;
-ui_display_node *current_display_node = NULL;
+// MessageData msg_data;
+// ui_display_node *current_display_node = NULL;
 
 uint8_t provision_date[4];
 Provision_Data_struct provision_keys_data;
@@ -214,8 +215,8 @@ void reset_flow_level() {
   memzero(wallet_credential_data.passphrase,
           sizeof(wallet_credential_data.passphrase));
   cy_free();
-  pb_release(MessageData_fields, &msg_data);
-  current_display_node = NULL;
+  // pb_release(MessageData_fields, &msg_data);
+  // current_display_node = NULL;
 }
 
 void reset_next_event_flag() {

@@ -97,7 +97,7 @@ m/1000'/4'/1'/0/i
 
 Before a device can be used, it must be authenticated using the desktop app at the user end. The authentication process takes place with device\_authentication\_controller() function.
 
-![](device-authentication.png)
+![](./assets/device-authentication.png)
 
 Authenticating a device involves the following tasks as shown in the sequence diagram:-
 

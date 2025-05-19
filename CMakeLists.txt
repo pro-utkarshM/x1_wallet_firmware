@@ -51,6 +51,9 @@ else()
     include(utilities/cmake/simulator/simulator.cmake)
 endif()
 
+# add_compile_definitions(ENABLE_BTC_ONLY)
+
+
 # Include nanopb source headers
 target_include_directories( ${EXECUTABLE} PRIVATE vendor/nanopb generated/proto vendor/mini-gmp vendor/poseidon/sources)
 

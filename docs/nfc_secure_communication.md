@@ -78,7 +78,7 @@ The cli provisioning tool has **_Mc-xPUB and Md-PK_****.** The cli performs hard
 
 Now, the **_Cd-PK and Mc-xPUB_** _are infused into the atecc chip_ along with the derivation path **_j/i_**_._
 
-![](device-provision.png)
+![](./assets/device-provision.png)
 
 _Steps no 11 and 12 have been added as a result of new changes._
 
@@ -114,7 +114,7 @@ Integration into existing flow of NFC communication
 
 Every secure APDU can use its original (existing) data format and is simply wrapped with an encryption, decryption steps on the source and destination of the data.
 
-![](secure-nfc-exchange.png)
+![](./assets/secure-nfc-exchange.png)
 
   
 

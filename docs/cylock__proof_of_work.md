@@ -99,7 +99,7 @@ Let’s assume that like Bitcoin we are using SHA-256. In each trial a random nu
 
   
 
-From basic probability we know that,![](probability-equation.png)
+From basic probability we know that,![](./assets/probability-equation.png)
 
   
 
