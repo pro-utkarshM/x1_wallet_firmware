@@ -1,27 +1,25 @@
 cmake_minimum_required(VERSION 3.19.0)
-set(CMAKE_MESSAGE_LOG_LEVEL debug)
+set(CMAKE_MESSAGE_LOG_LEVEL INFO)
 
 if("${CMAKE_BUILD_PLATFORM}" STREQUAL "Device")
-    message("Device platform selected")
+    message(STATUS "Device platform selected")
     set(CMAKE_TOOLCHAIN_FILE utilities/cmake/arm-none-eabi-gcc.cmake)
-    set(PROJECT Cypherock-${FIRMWARE_TYPE})
+    set(PROJECT Cypherock-${FIRMWARE_TYPE}) # FIRMWARE_TYPE should be passed as a CMake argument
 elseif("${CMAKE_BUILD_PLATFORM}" STREQUAL "Simulator")
-    message("Simulator platform selected")
+    message(STATUS "Simulator platform selected")
     set(PROJECT Cypherock_Simulator)
 else()
-    message(WARNING "No platform specified defaulting to Simulator. Specify using -DCMAKE_BUILD_PLATFORM=<Type> Type can be Device or Simulator")
+    message(WARNING "No platform specified, defaulting to Simulator. Specify using -DCMAKE_BUILD_PLATFORM=<Type> Type can be Device or Simulator")
     set(PROJECT Cypherock_Simulator)
+    set(CMAKE_BUILD_PLATFORM "Simulator") # Explicitly set for clarity if defaulting
 endif()
 
 project(${PROJECT})
 
-# python is needed for compiling proto files using nanopb
-# also for generating & appending firmware signature headers
 find_package( Python3 REQUIRED COMPONENTS Interpreter )
 execute_process(COMMAND sh utilities/proto/generate-protob.sh WORKING_DIRECTORY ${PROJECT_SOURCE_DIR} COMMAND_ERROR_IS_FATAL ANY )
 
-# Populate version.c
-include(utilities/cmake/version.cmake)
+include(utilities/cmake/version.cmake) # Populates version.c
 
 file(GLOB_RECURSE PROTO_SRCS "generated/proto/*.*")
 list(APPEND PROTO_SRCS "vendor/nanopb/pb_common.c" "vendor/nanopb/pb_decode.c" "vendor/nanopb/pb_encode.c" "vendor/nanopb/pb_common.h" "vendor/nanopb/pb_decode.h" "vendor/nanopb/pb_encode.h" "vendor/nanopb/pb.h")
@@ -31,8 +29,8 @@ list (APPEND POSEIDON_SRCS "vendor/poseidon/sources/f251.c" "vendor/poseidon/sou
 
 OPTION(DEV_SWITCH "Additional features/logs to aid developers" OFF)
 OPTION(UNIT_TESTS_SWITCH "Compile build for main firmware or unit tests" OFF)
+OPTION(btc_only "Build firmware for Bitcoin only" OFF)
 
-# Make static functions testable via unit-tests
 IF(UNIT_TESTS_SWITCH)
     add_compile_definitions( STATIC= )
 ELSE()
@@ -47,13 +45,21 @@ endif()
 
 if("${CMAKE_BUILD_PLATFORM}" STREQUAL "Device")
     include(utilities/cmake/firmware/firmware.cmake)
-else()
+else() # Simulator or default
     include(utilities/cmake/simulator/simulator.cmake)
 endif()
 
-# Include nanopb source headers
-target_include_directories( ${EXECUTABLE} PRIVATE vendor/nanopb generated/proto vendor/mini-gmp vendor/poseidon/sources)
-
-# Enable support for dynamically allocated fields in nanopb
-# Ref: vendor/nanopb/pb.h
-add_compile_definitions(PB_ENABLE_MALLOC=1 PB_NO_ERRMSG=1)
+if(TARGET ${EXECUTABLE})
+    target_include_directories( ${EXECUTABLE} PRIVATE 
+        "${CMAKE_SOURCE_DIR}/vendor/nanopb"
+        "${CMAKE_SOURCE_DIR}/generated/proto"
+        "${CMAKE_SOURCE_DIR}/vendor/mini-gmp"
+        "${CMAKE_SOURCE_DIR}/vendor/poseidon/sources"
+    )
+    target_compile_definitions( ${EXECUTABLE} PRIVATE PB_ENABLE_MALLOC=1 PB_NO_ERRMSG=1)
+else()
+    if("${CMAKE_BUILD_PLATFORM}" STREQUAL "Device" OR (NOT CMAKE_BUILD_PLATFORM AND NOT PROJECT STREQUAL "Cypherock_Simulator"))
+        # This warning might appear if firmware.cmake itself fails early due to a parse error
+        message(WARNING "EXECUTABLE target not defined when expected. Common includes/definitions for EXECUTABLE might be skipped.")
+    endif()
+endif()
