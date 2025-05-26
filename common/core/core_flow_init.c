@@ -63,30 +63,36 @@
 
 #include "app_registry.h"
 #include "application_startup.h"
+#include "main_menu.h"
+#include "onboarding.h"
+#include "restricted_app.h"
+
+// Apps/modules always included or essential for BTC-only mode
+#include "manager_app.h"
+#include "inheritance_main.h"
+#include "btc_app.h"
+#include "btc_main.h"
+
+// Conditionally include headers for other apps only if not a BTC_ONLY_BUILD
+#ifndef BTC_ONLY_BUILD
 #include "arbitrum_app.h"
 #include "avalanche_app.h"
 #include "bsc_app.h"
-#include "btc_app.h"
-#include "btc_main.h"
 #include "dash_app.h"
 #include "doge_app.h"
 #include "eth_app.h"
 #include "evm_main.h"
 #include "fantom_app.h"
 #include "icp_main.h"
-#include "inheritance_main.h"
 #include "ltc_app.h"
-#include "main_menu.h"
-#include "manager_app.h"
 #include "near_main.h"
-#include "onboarding.h"
 #include "optimism_app.h"
 #include "polygon_app.h"
-#include "restricted_app.h"
 #include "solana_main.h"
 #include "starknet_main.h"
 #include "tron_main.h"
 #include "xrp_main.h"
+#endif // BTC_ONLY_BUILD
 
 /*****************************************************************************
  * EXTERN VARIABLES
@@ -167,24 +173,41 @@ engine_ctx_t *get_core_flow_ctx(void) {
   return &core_step_engine_ctx;
 }
 
+
 void core_init_app_registry() {
+  // Apps always registered
   registry_add_app(get_manager_app_desc());
-  registry_add_app(get_btc_app_desc());
+  registry_add_app(get_btc_app_desc()); // Bitcoin Core app
+  registry_add_app(get_inheritance_app_desc());
+
+#ifndef BTC_ONLY_BUILD 
+  // If NOT a Bitcoin-only build, register other apps
+  // BTC Family apps (if not covered by a generic btc_main or if they are distinct apps)
+  // Assuming these are distinct apps not built in BTC_ONLY_BUILD based on CMakeLists
   registry_add_app(get_ltc_app_desc());
   registry_add_app(get_doge_app_desc());
   registry_add_app(get_dash_app_desc());
-  registry_add_app(get_eth_app_desc());
-  registry_add_app(get_near_app_desc());
+
+  // EVM Family & specific EVM chains
+  registry_add_app(get_eth_app_desc());   
+  // Or this might be covered by a generic evm_main descriptor
+  // if evm_main.h handles multiple chains.
+  // Based on individual app headers, register them specifically.
   registry_add_app(get_polygon_app_desc());
-  registry_add_app(get_solana_app_desc());
   registry_add_app(get_bsc_app_desc());
   registry_add_app(get_fantom_app_desc());
   registry_add_app(get_avalanche_app_desc());
   registry_add_app(get_optimism_app_desc());
   registry_add_app(get_arbitrum_app_desc());
+  // If evm_main.h provides a generic get_evm_app_desc() and handles internal dispatch,
+  // then only that would be needed. But current includes suggest separate app_desc getters.
+
+  // Other chains
+  registry_add_app(get_near_app_desc());
+  registry_add_app(get_solana_app_desc());
   registry_add_app(get_tron_app_desc());
-  registry_add_app(get_inheritance_app_desc());
   registry_add_app(get_xrp_app_desc());
   registry_add_app(get_starknet_app_desc());
   registry_add_app(get_icp_app_desc());
+#endif // !BTC_ONLY_BUILD
 }

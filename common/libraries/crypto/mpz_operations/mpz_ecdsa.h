@@ -146,9 +146,7 @@ int mpz_curve_point_is_equal(const mpz_curve_point *p,
  * @param q Second curve point.
  * @return Non-zero if points are negatives, 0 otherwise.
  */
-int mpz_curve_point_is_negative_of(const mpz_curve_point *p,
-                                   const mpz_curve_point *q);
-
+int mpz_curve_point_is_negative_of(const mpz_curve_point *p, const mpz_curve_point *q, const mpz_curve *curve);
 /**
  * @brief Generates ecdsa signature on mpz curve; currently configured for stark
  * curves(f252)
