@@ -152,4 +152,45 @@ int btc_get_taproot_address(uint8_t *public_key,
                             const char *hrp,
                             char *address);
 
+/**
+ * @brief Tweaks a private key for Taproot key path spending.
+ * @details This function implements BIP341 private key tweaking for Taproot.
+ * The tweaked private key is computed as sk' = sk + t (mod n) where t is the
+ * tweak hash.
+ *
+ * @param private_key The internal private key (32 bytes)
+ * @param root_hash The Merkle root hash (32 bytes, can be NULL for key path
+ * only)
+ * @param public_key The public key (33 bytes, compressed format)
+ * @param tweaked_private_key Output buffer for the tweaked private key (32
+ * bytes)
+ *
+ * @return bool Status code
+ * @retval true Success
+ * @retval false Error (invalid inputs, tweaking failed)
+ */
+bool bip340_tweak_private_key(const uint8_t *private_key,
+                              const uint8_t *public_key,
+                              const uint8_t *root_hash,
+                              uint8_t *tweaked_private_key);
+
+/**
+ * @brief Tweaks a public key for Taproot key path spending.
+ * @details This function implements BIP341 public key tweaking for Taproot.
+ * The tweaked public key is computed as P' = P + t*G where t is the tweak hash.
+ *
+ * @param public_key The internal public key (33 bytes, compressed format)
+ * @param root_hash The Merkle root hash (32 bytes, can be NULL for key path
+ * only)
+ * @param tweaked_public_key Output buffer for the tweaked public key
+ * x-coordinate (32 bytes)
+ *
+ * @return bool Status code
+ * @retval true Success
+ * @retval false Error (invalid inputs, tweaking failed)
+ */
+bool bip340_tweak_public_key(const uint8_t *public_key,
+                             const uint8_t *root_hash,
+                             uint8_t *tweaked_public_key);
+
 #endif

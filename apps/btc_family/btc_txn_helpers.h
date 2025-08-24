@@ -98,4 +98,32 @@ bool btc_digest_input(const btc_txn_context_t *context,
                       uint32_t index,
                       uint8_t *digest);
 
+/**
+ * @brief Initializes the taproot cache for signing taproot transactions.
+ * @details The function fills the calculated cache for taproot transactions.
+ * The cache consists of pre-computed hashes needed for signing taproot inputs.
+ *
+ * @param context Reference to the context for the current transaction to be signed
+ */
+void btc_taproot_init_cache(btc_txn_context_t *context);
+
+/**
+ * @brief Generates a BIP340 Schnorr signature for Taproot transactions.
+ * @details This function implements BIP340 Schnorr signature generation
+ * specifically for Taproot key path spending with tweaked private keys.
+ *
+ * @param private_key The tweaked private key (32 bytes)
+ * @param public_key The corresponding public key x-coordinate (32 bytes)
+ * @param digest The transaction digest to sign (32 bytes)
+ * @param signature_bytes Output buffer for the signature (64 bytes)
+ *
+ * @return int Status code
+ * @retval 0 Success
+ * @retval -1 Error (invalid inputs, signature generation failed)
+ */
+int schnorrsig_sign32_taproot(const uint8_t *private_key,
+                              const uint8_t *public_key,
+                              const uint8_t *digest,
+                              uint8_t *signature_bytes);
+
 #endif    // BTC_TXN_HELPERS_H

@@ -73,6 +73,7 @@
 #include "secp256k1.h"
 #include "segwit_addr.h"
 #include "sha2.h"
+#include "ui_core_confirm.h"
 #include "utils.h"
 
 /*****************************************************************************
@@ -144,11 +145,13 @@ static bool bip340_point_add_tweak(const ecdsa_curve *curve,
                                    const uint8_t *tweak_key_hash,
                                    uint8_t result[32]) {
   if (NULL == public_key || NULL == tweak_key_hash || NULL == result) {
+    core_confirmation("NULL public key", NULL);
     return false;
   }
 
   curve_point public_key_point = {0};
   if (!ecdsa_read_pubkey(curve, public_key, &public_key_point)) {
+    core_confirmation("read pubkey failed", NULL);
     return false;
   }
 
@@ -163,6 +166,7 @@ static bool bip340_point_add_tweak(const ecdsa_curve *curve,
   bn_mod(&tweak_hash_bn, &curve->order);
 
   if (bn_is_zero(&tweak_hash_bn)) {
+    core_confirmation("tweak hash is zero", NULL);
     return false;
   }
 
@@ -177,28 +181,6 @@ static bool bip340_point_add_tweak(const ecdsa_curve *curve,
 
   // take the x-coordinate of the result point
   bn_write_be(&result_point.x, result);
-  return true;
-}
-
-// implementation of BIP-340 tweak public key for taproot without using
-// secp256k1 library
-static bool bip340_tweak_public_key(const uint8_t *public_key,
-                                    const uint8_t *root_hash,
-                                    uint8_t *tweaked_public_key) {
-  if (NULL == public_key || NULL == tweaked_public_key) {
-    return false;
-  }
-
-  uint8_t tweak_key_hash[32] = {0};
-  if (!bip340_tweak_key_hash(public_key + 1, root_hash, tweak_key_hash)) {
-    return false;
-  }
-
-  if (!bip340_point_add_tweak(
-          &secp256k1, public_key, tweak_key_hash, tweaked_public_key)) {
-    return false;
-  }
-
   return true;
 }
 
@@ -269,6 +251,9 @@ bool btc_get_version(uint32_t purpose_index, uint32_t *xpub_ver) {
     case PURPOSE_NSEGWIT:
       *xpub_ver = g_btc_app->nsegwit_xpub_ver;
       break;
+    case PURPOSE_TAPROOT:
+      *xpub_ver = g_btc_app->taproot_xpub_ver;
+      break;
     default:
       status = false;
   }
@@ -314,6 +299,63 @@ void format_value(const uint64_t value_in_sat,
   double fee_in_btc = 1.0 * value_in_sat / (SATOSHI_PER_BTC);
   snprintf(
       msg, msg_len, "%0.*f %s", precision, fee_in_btc, g_btc_app->lunit_name);
+}
+
+// implementation of BIP-340 tweak public key for taproot without using
+// secp256k1 library
+bool bip340_tweak_public_key(const uint8_t *public_key,
+                             const uint8_t *root_hash,
+                             uint8_t *tweaked_public_key) {
+  if (NULL == public_key || NULL == tweaked_public_key) {
+    core_confirmation("NULL public key", NULL);
+    return false;
+  }
+
+  uint8_t tweak_key_hash[32] = {0};
+  if (!bip340_tweak_key_hash(public_key + 1, root_hash, tweak_key_hash)) {
+    core_confirmation("tweak key hash failed", NULL);
+    return false;
+  }
+
+  if (!bip340_point_add_tweak(
+          &secp256k1, public_key, tweak_key_hash, tweaked_public_key)) {
+    core_confirmation("point add tweak failed", NULL);
+    return false;
+  }
+
+  return true;
+}
+
+// BIP341 private key tweaking for Taproot
+bool bip340_tweak_private_key(const uint8_t *private_key, const uint8_t *public_key, const uint8_t *root_hash, uint8_t *tweaked_private_key) {
+  if (NULL == private_key || NULL == tweaked_private_key) {
+    return false;
+  }
+
+  // Compute the tweak hash
+  uint8_t tweak_hash[32] = {0};
+  if (!bip340_tweak_key_hash(public_key + 1, root_hash, tweak_hash)) {
+    return false;
+  }
+
+  // Compute tweaked private key: sk' = sk + t (mod n)
+  bignum256 sk, t, result;
+  bn_read_be(private_key, &sk);
+  bn_read_be(tweak_hash, &t);
+  bn_mod(&t, &secp256k1.order);
+
+  bn_addmod(&sk, &t, &secp256k1.order);
+  bn_copy(&sk, &result);
+
+  bn_write_be(&result, tweaked_private_key);
+
+  // Clear sensitive data
+  memzero(&sk, sizeof(sk));
+  memzero(&t, sizeof(t));
+  memzero(&result, sizeof(result));
+  memzero(tweak_hash, sizeof(tweak_hash));
+
+  return true;
 }
 
 int btc_get_taproot_address(uint8_t *public_key,

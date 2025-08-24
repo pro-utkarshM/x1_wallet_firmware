@@ -503,7 +503,7 @@ static bool fetch_valid_input(btc_query_t *query) {
     hoisted_query = NULL;
 
     if ((SCRIPT_TYPE_P2PKH != type && SCRIPT_TYPE_P2WPKH != type &&
-         SCRIPT_TYPE_P2SH != type) ||
+         SCRIPT_TYPE_P2SH != type && SCRIPT_TYPE_P2TR != type) ||
         validation_result != BTC_VALIDATE_SUCCESS) {
       // input validation failed, terminate immediately
       btc_send_error(ERROR_COMMON_ERROR_CORRUPT_DATA_TAG,
@@ -653,6 +653,7 @@ static bool validate_change_address(const HDNode *acc_node) {
 }
 
 static bool sign_input(scrip_sig_t *signatures) {
+  core_confirmation("sign_input started", btc_send_error);
   uint8_t buffer[64] = {0};
   HDNode node = {0};
   HDNode t_node = {0};
@@ -669,6 +670,8 @@ static bool sign_input(scrip_sig_t *signatures) {
 
   // populate hashes cache for segwit transaction types
   btc_segwit_init_cache(btc_txn_context);
+  // populate hashes cache for taproot transaction types
+  btc_taproot_init_cache(btc_txn_context);
   if (!derive_hdnode_from_path(hd_path, 3, SECP256K1_NAME, buffer, &node) ||
       false == validate_change_address(&node)) {
     btc_send_error(ERROR_COMMON_ERROR_CORRUPT_DATA_TAG,
@@ -702,10 +705,27 @@ static bool sign_input(scrip_sig_t *signatures) {
     }
 
     status = btc_digest_input(btc_txn_context, idx, buffer);
-    ecdsa_sign_digest(
-        curve, t_node.private_key, buffer, signatures[idx].bytes, NULL, NULL);
-    signatures[idx].size = btc_sig_to_script_sig(
-        signatures[idx].bytes, t_node.public_key, signatures[idx].bytes);
+    if (PURPOSE_TAPROOT == hd_path[0]) {
+      // Sign with Schnorr signature
+      if (schnorrsig_sign32_taproot(t_node.private_key,
+                                    t_node.public_key,
+                                    buffer,
+                                    signatures[idx].bytes) != 0) {
+        status = false;
+        core_confirmation("schnorrsig_sign32_taproot failed", btc_send_error);
+        break;
+      }
+      // add public key to the signature
+      memcpy(signatures[idx].bytes + 64, t_node.public_key, 33);
+
+      // Taproot signatures are 64 bytes (no script sig encoding needed)
+      signatures[idx].size = 64 + 33;
+    } else {
+      ecdsa_sign_digest(
+          curve, t_node.private_key, buffer, signatures[idx].bytes, NULL, NULL);
+      signatures[idx].size = btc_sig_to_script_sig(
+          signatures[idx].bytes, t_node.public_key, signatures[idx].bytes);
+    }
     if (0 == signatures[idx].size || false == status) {
       // early exit as digest could not be calculated
       btc_send_error(ERROR_COMMON_ERROR_UNKNOWN_ERROR_TAG, 1);
@@ -716,10 +736,12 @@ static bool sign_input(scrip_sig_t *signatures) {
   memzero(&node, sizeof(HDNode));
   memzero(&t_node, sizeof(HDNode));
   memzero(buffer, sizeof(buffer));
+  core_confirmation("sign_input ended", btc_send_error);
   return status;
 }
 
 static bool send_script_sig(btc_query_t *query, const scrip_sig_t *sigs) {
+  core_confirmation("send_script_sig started", btc_send_error);
   btc_result_t result = init_btc_result(BTC_RESULT_SIGN_TXN_TAG);
   result.sign_txn.which_response = BTC_SIGN_TXN_RESPONSE_SIGNATURE_TAG;
 
@@ -732,6 +754,7 @@ static bool send_script_sig(btc_query_t *query, const scrip_sig_t *sigs) {
         &result.sign_txn.signature.signature, &sigs[idx], sizeof(scrip_sig_t));
     btc_send_result(&result);
   }
+  core_confirmation("send_script_sig ended", btc_send_error);
   return true;
 }
 
