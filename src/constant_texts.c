@@ -63,6 +63,23 @@
 #define VENDOR_COMPANION_APP "cySync"
 #endif
 
+#ifndef VENDOR_DEVICE_NAME
+#define VENDOR_DEVICE_NAME "Cypherock X1"
+#endif
+
+#ifndef VENDOR_COMPANY_NAME
+#define VENDOR_COMPANY_NAME "Cypherock"
+#endif
+
+// vendor based texts
+#if VENDOR_ID == 1    // odix
+#define VENDOR_WALLET_PAGE_LINK "odixpay.com/wallet"
+#define VENDOR_ERROR_PAGE_LINK "odixpay.com/wallet"
+#else    // cypherock default
+#define VENDOR_WALLET_PAGE_LINK "cypherock.com/go"
+#define VENDOR_ERROR_PAGE_LINK "cypherock.com/error-codes"
+#endif
+
 // Main menu text
 const char *ui_text_heading_main_menu = "Main Menu";
 const char *ui_text_options_main_menu[] = {"Create Wallet",
@@ -166,9 +183,9 @@ const char *ui_text_click_to_view_wallets = "Click Ok to view wallets";
 const char *ui_text_no_wallets_fetched =
     "No Wallets fetched\nClick Ok to return";
 const char *ui_text_card_health_check_start = "Tap a card to check it's health";
-const char *ui_text_card_health_check_error[] = {
-    "Card error: ",
-    "Visit cypherock.com/error-codes for more info"};
+const char *ui_text_card_health_check_error[] = {"Card error: ",
+                                                 "Visit " VENDOR_ERROR_PAGE_LINK
+                                                 " for more info"};
 
 // Sync wallets with cards text
 const char *ui_text_syncing_complete = "wallet(s) synced";
@@ -211,11 +228,11 @@ const char *ui_text_wallet_selector_invalid =
 // Onboarding flow text
 const char *ui_text_onboarding_welcome = "Welcome";
 const char *ui_text_onboarding[NUMBER_OF_SLIDESHOW_SCREENS_ONBOARDING] = {
-    "Visit\ncypherock.com/go",
+    "Visit\n" VENDOR_WALLET_PAGE_LINK "",
     "And download the " VENDOR_COMPANION_APP " app to set up the device",
     "Follow instructions on the " VENDOR_COMPANION_APP " app"};
 const char *ui_text_onboarding_complete =
-    "Congratulations!\nCypherock X1 is ready to use";
+    "Congratulations!\n" VENDOR_DEVICE_NAME " is ready to use";
 
 // wallet creation
 const char *ui_text_verification_is_now_complete_messages[] = {
@@ -242,7 +259,7 @@ const char *ui_text_startup_instruction_screen_2[] = {
     "If you are ready use centre click to proceed"};
 
 const char *ui_text_startup_instruction_screen_4[] = {
-    "Now visit cypherock.com/gs",
+    "Now visit " VENDOR_WALLET_PAGE_LINK "",
     "and download the " VENDOR_COMPANION_APP " app to set up the device"
 
 };
@@ -286,7 +303,7 @@ const char *ui_text_authentication_required = "Device authentication required";
 const char *ui_text_start_auth_from_CySync =
     "Authenticate device from the " VENDOR_COMPANION_APP " app";
 const char *ui_text_invalid_card_contact_cypherock =
-    "Authentication failed Contact Cypherock";
+    "Authentication failed Contact " VENDOR_COMPANY_NAME "";
 const char *ui_text_wrong_card_sequence = "Wrong card sequence";
 const char *ui_text_tap_another_card = "Tap another card";
 const char *ui_text_wallet_doesnt_exists_on_this_card =
