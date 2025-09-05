@@ -32,7 +32,7 @@ jobs:
           fi
           git clone --branch ${VERSION_TAG} --depth 1 https://github.com/${{ github.repository }}.git --recurse-submodules
           mkdir build && cd x1_wallet_firmware && mkdir build && cd build
-          cmake -DCMAKE_BUILD_TYPE="${{ inputs.target }}" -DFIRMWARE_TYPE="${{ inputs.firmware }}" -DCMAKE_BUILD_PLATFORM="Device" -DVENDOR="${{ inputs.vendor }}"-G "Ninja" ..
+          cmake -DCMAKE_BUILD_TYPE="${{ inputs.target }}" -DFIRMWARE_TYPE="${{ inputs.firmware }}" -DCMAKE_BUILD_PLATFORM="Device" -DVENDOR="${{ inputs.vendor }}" -G "Ninja" ..
           ninja && cd ../..
           cp x1_wallet_firmware/build/Cypherock-*.* ./build/
       - name: Archive Build Artifacts
