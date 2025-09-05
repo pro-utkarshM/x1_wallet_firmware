@@ -56,7 +56,14 @@
 #define UI_TEXT_PIN "PIN\n %s"
 #define UI_TEXT_VERIFY_DESTINATION_TAG "Verify Destination Tag\n%lu"
 #define UI_TEXT_VERIFY_PRIORITY_FEE "Verify Priority Fee\n%s\n%s"
+#define UI_TEXT_VERIFY_FEE "Verify Fee\n%s\n%s"
+#define UI_TEXT_VERIFY_DATA "Verify Data"
+#define UI_TEXT_SIGN_MSG_PROMPT "Sign message on %s from %s"
+#define UI_TEXT_SIGN_DATA_PROMPT "Sign data on %s from %s"
 #define UI_TEXT_VERIFY_MEMO "Verify Memo\n%s"
+#define UI_TEXT_VERIFY_MEMO_ID "Verify Memo ID\n%llu"
+#define UI_TEXT_VERIFY_MEMO_HASH "Verify Memo Hash\n%s"
+#define UI_TEXT_CALLDATA "Calldata"
 
 // product hash
 extern const char *product_hash;
@@ -83,11 +90,11 @@ extern const char *ui_text_mnemonics_number_options[];
 
 // Settings menu text
 #ifdef DEV_BUILD
-#define NUMBER_OF_OPTIONS_SETTINGS 12
+#define NUMBER_OF_OPTIONS_SETTINGS 13
 // TODO: Update after refactor - remove the following MACRO
 #define NUMBER_OF_OPTIONS_ADVANCED_OPTIONS NUMBER_OF_OPTIONS_SETTINGS
 #else
-#define NUMBER_OF_OPTIONS_SETTINGS 11
+#define NUMBER_OF_OPTIONS_SETTINGS 12
 // TODO: Update after refactor - remove the following MACRO
 #define NUMBER_OF_OPTIONS_ADVANCED_OPTIONS NUMBER_OF_OPTIONS_SETTINGS
 #endif /* DEV_BUILD*/
@@ -105,6 +112,13 @@ extern const char *ui_text_card_pairing_warning;
 #if DEV_BUILD
 extern const char *ui_text_options_buzzer_adjust[];
 #endif /* DEV_BUILD */
+
+// Advanced Settings menu text
+#define NUMBER_OF_OPTIONS_ADVANCED_SETTINGS 1
+extern const char *ui_text_heading_advanced_settings;
+extern const char
+    *ui_text_options_advanced_settings[NUMBER_OF_OPTIONS_ADVANCED_SETTINGS];
+extern const char *ui_text_options_raw_calldata[];
 
 // Regulatory info text
 #define NUMBER_OF_SLIDES_REGULATORY_INFO 5
@@ -322,6 +336,7 @@ extern const char *ui_text_disable_passphrase_step;
 extern const char *ui_text_warning_txn_fee_too_high;
 extern const char *ui_text_enable_log_export;
 extern const char *ui_text_disable_log_export;
+extern const char *ui_text_enable_raw_calldata;
 
 //?
 extern const char *ui_text_do_you_want_import_wallet_to_desktop;
@@ -375,6 +390,7 @@ extern const char *ui_text_card_detected;
 extern const char *ui_text_nfc_hardware_fault_detected;
 extern const char *ui_text_unreliable_cards;
 extern const char *ui_critical_card_health_migrate_data;
+extern const char *ui_text_check_software_wallet_app;
 
 // App specific
 
@@ -399,8 +415,10 @@ extern const char *ui_text_inheritance_decryption_flow_failure;
 extern const char *ui_text_principal_id;
 extern const char *ui_text_account_id;
 extern const char *ui_text_verify_principal_id;
+extern const char *ui_text_verify_account_id;
 
 #ifdef ALLOW_LOG_EXPORT
 extern const char *ui_text_send_logs_prompt;
 #endif
+
 #endif    // CONSTANT_TEXTS_H

@@ -61,11 +61,13 @@
  *****************************************************************************/
 #include "settings_menu.h"
 
+#include "advanced_settings_menu.h"
 #include "constant_texts.h"
 #include "core_error_priv.h"
 #include "flash_api.h"
 #include "menu_priv.h"
 #include "settings_api.h"
+#include "ui_events.h"
 #include "ui_screens.h"
 
 /*****************************************************************************
@@ -91,6 +93,7 @@ typedef enum {
   VIEW_CARD_VERSION,
   VIEW_REGULATORY_INFO,
   PAIR_CARD,
+  ADVANCED_SETTINGS,
 #ifdef DEV_BUILD
   TOGGLE_BUZZER,
 #endif
@@ -225,6 +228,11 @@ static void settings_menu_handler(engine_ctx_t *ctx,
         pair_x1_cards();
         break;
       }
+      case ADVANCED_SETTINGS: {
+        engine_add_next_flow_step(ctx, advanced_settings_menu_get_step());
+        engine_goto_next_flow_step(ctx);
+        break;
+      }
       default: {
         // TODO: Handle all cases
         break;
@@ -234,9 +242,12 @@ static void settings_menu_handler(engine_ctx_t *ctx,
     // UI_EVENT_LIST_REJECTION handled below already
   }
 
-  /* Return to the previous menu irrespective if UI_EVENT_REJECTION was
-   * detected, or any option was executed */
-  engine_delete_current_flow_step(ctx);
+  if (ui_event.event_type != UI_EVENT_LIST_CHOICE ||
+      ui_event.list_selection != ADVANCED_SETTINGS) {
+    /* Return to the previous menu irrespective if UI_EVENT_REJECTION was
+     * detected, or any option was executed */
+    engine_delete_current_flow_step(ctx);
+  }
 
   return;
 }
