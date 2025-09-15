@@ -28,6 +28,10 @@
 typedef struct {
 } canton_config_t;
 
+typedef struct {
+  // TODO: canton fields
+} canton_unsigned_txn;
+
 /*****************************************************************************
  * EXPORTED VARIABLES
  *****************************************************************************/

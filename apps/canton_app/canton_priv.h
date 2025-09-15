@@ -18,6 +18,7 @@
 
 #include "canton/core.pb.h"
 #include "canton/sign_txn.pb.h"
+#include "canton_context.h"
 
 /*****************************************************************************
  * MACROS AND DEFINES
@@ -38,7 +39,7 @@ typedef struct {
   uint8_t *transaction;
 
   // TODO: decoded unsigned txn
-  // canton_unsigned_txn *raw_txn;
+  canton_unsigned_txn *unsigned_txn;
 
 } canton_txn_context_t;
 
