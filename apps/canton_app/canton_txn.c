@@ -270,6 +270,50 @@ static bool handle_initiate_query(const canton_query_t *query) {
   return true;
 }
 
+static bool sign_txn(signature_t *signature) {
+  /* reconstruct seed */
+  uint8_t seed[64] = {0};
+  if (false == reconstruct_seed(canton_txn_context->init_info.wallet_id,
+                                seed,
+                                canton_send_error)) {
+    // TODO: handle errors of reconstruction flow
+    /* zeroed the seed for security and early return */
+    memzero(seed, sizeof(seed));
+    return false;
+  }
+
+  set_app_flow_status(CANTON_SIGN_TXN_STATUS_SEED_GENERATED);
+
+  /* hash the transaction data */
+  uint8_t digest[SHA256_DIGEST_LENGTH] = {0};
+  sha256_Raw(canton_txn_context->transaction,
+             canton_txn_context->init_info.transaction_size,
+             digest);
+
+  /* derive hdnode from given derivation path, and previously computed seed */
+  HDNode hdnode = {0};
+  derive_hdnode_from_path(canton_txn_context->init_info.derivation_path,
+                          canton_txn_context->init_info.derivation_path_count,
+                          ED25519_NAME,
+                          seed,
+                          &hdnode);
+
+  /* compute signature, signature size is fixed 64 bytes in ed25519 */
+  signature->size = 64;
+  ed25519_sign(digest,
+               SHA256_DIGEST_LENGTH,
+               hdnode.private_key,
+               hdnode.public_key,
+               signature->bytes);
+
+  /* zero out for security */
+  memzero(digest, sizeof(digest));
+  memzero(seed, sizeof(seed));
+  memzero(&hdnode, sizeof(hdnode));
+
+  return true;
+}
+
 static bool send_signature(canton_query_t *query,
                            const signature_t *signature) {
   /* create new result */
