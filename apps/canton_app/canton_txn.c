@@ -72,6 +72,7 @@
 #include "canton_api.h"
 #include "canton_context.h"
 #include "canton_priv.h"
+#include "canton_txn_helpers.h"
 #include "coin_utils.h"
 #include "constant_texts.h"
 #include "curves.h"
@@ -156,7 +157,7 @@ static bool handle_initiate_query(const canton_query_t *query);
  * @retval true If all data is recieved and is not corrupted.
  * @retval false If failed to recieve data or got corrupted is transfer
  */
-static bool fetch_parse_txn_data(const canton_query_t *query);
+static bool fetch_parse_txn_data(canton_query_t *query);
 
 /**
  * @brief Confirms user for signing transaction while displaying data about
@@ -267,6 +268,74 @@ static bool handle_initiate_query(const canton_query_t *query) {
   /* manually added delay, additional delay will be added due to actual
    * processing */
   delay_scr_init(ui_text_processing, DELAY_SHORT);
+  return true;
+}
+
+static bool fetch_parse_txn_data(canton_query_t *query) {
+  size_t size = 0;
+  canton_result_t response = init_canton_result(CANTON_RESULT_SIGN_TXN_TAG);
+  size_t expected_total_size = canton_txn_context->init_info.transaction_size;
+  const canton_sign_txn_data_t *txn_data = &query->sign_txn.txn_data;
+  const common_chunk_payload_t *payload = &txn_data->chunk_payload;
+  const common_chunk_payload_chunk_t *chunk = &txn_data->chunk_payload.chunk;
+
+  /* allocate buffer for incoming transaction data */
+  canton_txn_context->transaction = (uint8_t *)malloc(expected_total_size);
+
+  /* keep fetching transaction data untill all are recieved */
+  while (true) {
+    /* if we recieve any non txn data query, we return */
+    if (!canton_get_query(query, CANTON_QUERY_SIGN_TXN_TAG) ||
+        !is_query_type(query, CANTON_SIGN_TXN_REQUEST_TXN_DATA_TAG)) {
+      return false;
+    }
+
+    /* if we recieve more payaload then we initially expected, abort. */
+    if (!txn_data->has_chunk_payload ||
+        payload->chunk_index >= payload->total_chunks ||
+        size + payload->chunk.size > expected_total_size) {
+      canton_send_error(ERROR_COMMON_ERROR_CORRUPT_DATA_TAG,
+                        ERROR_DATA_FLOW_INVALID_DATA);
+      return false;
+    }
+
+    /* copy data and increment counting size */
+    memcpy(&canton_txn_context->transaction[size], chunk->bytes, chunk->size);
+    size += chunk->size;
+
+    /* send ack to host */
+    response.sign_txn.which_response =
+        CANTON_SIGN_TXN_RESPONSE_DATA_ACCEPTED_TAG;
+    response.sign_txn.data_accepted.has_chunk_ack = true;
+    response.sign_txn.data_accepted.chunk_ack.chunk_index =
+        payload->chunk_index;
+    canton_send_result(&response);
+
+    /* if we recieved the final payload */
+    if (0 == payload->remaining_size ||
+        payload->chunk_index + 1 == payload->total_chunks) {
+      break;
+    }
+  }
+
+  /* if somehow recieved data size is not the same as expected size */
+  if (size != expected_total_size) {
+    canton_send_error(ERROR_COMMON_ERROR_CORRUPT_DATA_TAG,
+                      ERROR_DATA_FLOW_INVALID_DATA);
+    return false;
+  }
+
+  /* parse transaction into @ref canton_unsigned_txn */
+  canton_txn_context->unsigned_txn =
+      (canton_unsigned_txn *)malloc(sizeof(canton_unsigned_txn));
+  if (!canton_parse_transaction(canton_txn_context->transaction,
+                                expected_total_size,
+                                canton_txn_context->unsigned_txn)) {
+    canton_send_error(ERROR_COMMON_ERROR_CORRUPT_DATA_TAG,
+                      ERROR_DATA_FLOW_INVALID_DATA);
+    return false;
+  }
+
   return true;
 }
 
