@@ -62,6 +62,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
         apps/icp_app
         apps/exchange_app
         apps/stellar_app
+        apps/sia_app
 
         src/
         src/menu
@@ -170,6 +171,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
         $<$<BOOL:UNIT_TESTS_SWITCH>:${PROJECT_SOURCE_DIR}/tests/apps/constellation_app>
         $<$<BOOL:UNIT_TESTS_SWITCH>:${PROJECT_SOURCE_DIR}/tests/apps/icp_app>
         $<$<BOOL:UNIT_TESTS_SWITCH>:${PROJECT_SOURCE_DIR}/tests/apps/stellar_app>
+        $<$<BOOL:UNIT_TESTS_SWITCH>:${PROJECT_SOURCE_DIR}/tests/apps/sia_app>
         )
 
 IF(UNIT_TESTS_SWITCH)

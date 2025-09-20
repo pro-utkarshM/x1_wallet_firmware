@@ -85,6 +85,7 @@
 #include "optimism_app.h"
 #include "polygon_app.h"
 #include "restricted_app.h"
+#include "sia_main.h"
 #include "solana_main.h"
 #include "starknet_main.h"
 #include "stellar_main.h"
@@ -193,4 +194,5 @@ void core_init_app_registry() {
   registry_add_app(get_icp_app_desc());
   registry_add_app(get_exchange_app_desc());
   registry_add_app(get_stellar_app_desc());
+  registry_add_app(get_sia_app_desc());
 }
