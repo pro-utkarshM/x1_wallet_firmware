@@ -193,9 +193,6 @@ void core_init_app_registry() {
   registry_add_app(get_constellation_app_desc());
   registry_add_app(get_icp_app_desc());
   registry_add_app(get_exchange_app_desc());
-<<<<<<< HEAD
   registry_add_app(get_stellar_app_desc());
-=======
   registry_add_app(get_hyperliquid_app_desc());
->>>>>>> 6e8f27d3 (feat: add header file to common/core and change cmake)
 }
