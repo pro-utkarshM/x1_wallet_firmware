@@ -417,6 +417,10 @@ extern const char *ui_text_account_id;
 extern const char *ui_text_verify_principal_id;
 extern const char *ui_text_verify_account_id;
 
+// Sia
+extern const char *ui_text_verify_sia_amount;
+extern const char *ui_text_verify_sia_fees;
+
 #ifdef ALLOW_LOG_EXPORT
 extern const char *ui_text_send_logs_prompt;
 #endif
