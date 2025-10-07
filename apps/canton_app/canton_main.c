@@ -127,22 +127,24 @@ void canton_main(usb_event_t usb_event, const void *canton_app_config) {
    * are now servicing a usb initiated command */
   core_status_set_idle_state(CORE_DEVICE_IDLE_STATE_USB);
 
-  switch ((uint8_t)query.which_request) {
-      // TODO: add get public key flow
+  // switch ((uint8_t)query.which_request) {
+  //   // TODO: add get public key and sign transaction flow
+  //   case CANTON_QUERY_GET_PUBLIC_KEYS_TAG: {
+  //     canton_get_pub_keys(&query);
+  //     break;
+  //   }
+  //   case CANTON_QUERY_SIGN_TXN_TAG: {
+  //     canton_sign_transaction(&query);
+  //     break;
+  //   }
 
-    /* sign transaction query */
-    case CANTON_QUERY_SIGN_TXN_TAG: {
-      canton_sign_transaction(&query);
-      break;
-    }
-
-    /* Incase we encounter an invalid query */
-    default: {
-      canton_send_error(ERROR_COMMON_ERROR_CORRUPT_DATA_TAG,
-                        ERROR_DATA_FLOW_INVALID_QUERY);
-      break;
-    }
-  }
+  //   /* Incase we encounter an invalid query */
+  //   default: {
+  //     canton_send_error(ERROR_COMMON_ERROR_CORRUPT_DATA_TAG,
+  //                       ERROR_DATA_FLOW_INVALID_QUERY);
+  //     break;
+  //   }
+  // }
 }
 
 /*****************************************************************************

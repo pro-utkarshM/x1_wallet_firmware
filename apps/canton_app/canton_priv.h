@@ -17,7 +17,6 @@
 #include <stdint.h>
 
 #include "canton/core.pb.h"
-#include "canton/sign_txn.pb.h"
 #include "canton_context.h"
 
 /*****************************************************************************
@@ -33,7 +32,7 @@ typedef struct {
    * The structure holds the wallet information of the transaction.
    * This is populated by `handle_initiate_query` present in canton_txn.c
    */
-  canton_sign_txn_init_request_t init_info;
+  // canton_sign_txn_initiate_request_t init_info;
 
   // raw transaction buffer
   uint8_t *transaction;
@@ -50,6 +49,15 @@ typedef struct {
 /*****************************************************************************
  * GLOBAL FUNCTION PROTOTYPES
  *****************************************************************************/
+
+ /**
+ * @brief Handler for Canton public key derivation.
+ * @details This flow expects CANTON_GET_PUBLIC_KEY_REQUEST_INITIATE_TAG as initial
+ * query, otherwise the flow is aborted
+ *
+ * @param query object for address public key query
+ */
+void canton_get_pub_keys(canton_query_t *query);
 
 /**
  * @brief Entry point for sign_transaction type queries
