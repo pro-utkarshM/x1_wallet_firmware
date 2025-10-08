@@ -134,8 +134,8 @@ bool get_party_id(const uint8_t *public_key, char *party_id) {
   // party_id = party_hint_str + :: + fingerprint_str
   // party_hint can by anything like "alice", "bob", "my-wallet", etc.
   // We are using first 5 bytes of sha256_hash(fingerprint) to keep it
-  // deterministic 
-  // party_hint = sha256_hash(fingerprint)[:5] 
+  // deterministic
+  // party_hint = sha256_hash(fingerprint)[:5]
   // Ref:
   // https://github.com/hyperledger-labs/splice-wallet-kernel/blob/main/core/ledger-client/src/topology-write-service.ts#L143
   // Ref:
