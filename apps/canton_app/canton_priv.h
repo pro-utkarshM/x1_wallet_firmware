@@ -50,10 +50,10 @@ typedef struct {
  * GLOBAL FUNCTION PROTOTYPES
  *****************************************************************************/
 
- /**
+/**
  * @brief Handler for Canton public key derivation.
- * @details This flow expects CANTON_GET_PUBLIC_KEY_REQUEST_INITIATE_TAG as initial
- * query, otherwise the flow is aborted
+ * @details This flow expects CANTON_GET_PUBLIC_KEY_REQUEST_INITIATE_TAG as
+ * initial query, otherwise the flow is aborted
  *
  * @param query object for address public key query
  */
