@@ -133,11 +133,10 @@ void canton_main(usb_event_t usb_event, const void *canton_app_config) {
       canton_get_pub_keys(&query);
       break;
     }
-    // TODO: add sign transaction flow
-    // case CANTON_QUERY_SIGN_TXN_TAG: {
-    //   canton_sign_transaction(&query);
-    //   break;
-    // }
+    case CANTON_QUERY_SIGN_TXN_TAG: {
+      canton_sign_transaction(&query);
+      break;
+    }
 
     /* Incase we encounter an invalid query */
     default: {
