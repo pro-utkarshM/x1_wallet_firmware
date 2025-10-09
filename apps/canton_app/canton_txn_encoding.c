@@ -1,16 +1,15 @@
 /**
- * @file    canton_api.c
+ * @file    canton_txn_encoding.c
  * @author  Cypherock X1 Team
- * @brief   Defines helpers apis for canton internal usage
- *
- * @copyright Copyright (c) 2023 HODL TECH PTE LTD
+ * @brief   Utilities specific to Canton chains
+ * @copyright Copyright (c) 2024 HODL TECH PTE LTD
  * <br/> You may obtain a copy of license at <a href="https://mitcc.org/"
  *target=_blank>https://mitcc.org/</a>
  *
  ******************************************************************************
  * @attention
  *
- * (c) Copyright 2023 by HODL TECH PTE LTD
+ * (c) Copyright 2024 by HODL TECH PTE LTD
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -61,23 +60,13 @@
  * INCLUDES
  *****************************************************************************/
 
-#include "canton_api.h"
+#include "canton_txn_encoding.h"
 
-#include <stdbool.h>
 #include <stddef.h>
-#include <stdint.h>
 
-#include "assert_conf.h"
-#include "canton/core.pb.h"
-#include "common_error.h"
-#include "core_api.h"
-#include "error.pb.h"
-#include "events.h"
-#include "memzero.h"
-#include "p0_events.h"
-#include "pb.h"
-#include "pb_decode.h"
-#include "pb_encode.h"
+#include "canton_api.h"
+#include "canton_context.h"
+#include "coin_utils.h"
 
 /*****************************************************************************
  * EXTERN VARIABLES
@@ -111,116 +100,104 @@
  * GLOBAL FUNCTIONS
  *****************************************************************************/
 
-canton_result_t init_canton_result(pb_size_t result_tag) {
-  canton_result_t result = CANTON_RESULT_INIT_ZERO;
-  result.which_response = result_tag;
-  return result;
+uint8_t *encode_canton_txn_node(const canton_daml_transaction_d_node_t *d_node,
+                                size_t *out_len) {
+  if (!d_node || !out_len) {
+    return NULL;
+  }
+
+  return NULL;
 }
 
-bool check_canton_query(const canton_query_t *query, pb_size_t exp_query_tag) {
-  if ((NULL == query) || (exp_query_tag != query->which_request)) {
-    canton_send_error(ERROR_COMMON_ERROR_CORRUPT_DATA_TAG,
-                      ERROR_DATA_FLOW_INVALID_QUERY);
+uint8_t *encode_canton_metadata_input_contract(
+    const canton_metadata_input_contract_t *input_contract,
+    size_t *out_len) {
+  if (!input_contract || !out_len) {
+    return NULL;
+  }
+
+  return NULL;
+}
+
+bool parse_and_hash_canton_txn_node(const uint8_t *txn_serialized_node,
+                                    uint32_t txn_node_size,
+                                    canton_txn_node_hash_t *node_hash) {
+  if (!txn_serialized_node || !txn_node_size || !node_hash) {
     return false;
   }
+
+  // decode protobuf serialized node
+  canton_daml_transaction_d_node_t decoded_d_node =
+      CANTON_DAML_TRANSACTION_D_NODE_INIT_ZERO;
+  if (!decode_canton_serialized_data(txn_serialized_node,
+                                     txn_node_size,
+                                     CANTON_DAML_TRANSACTION_D_NODE_FIELDS,
+                                     &decoded_d_node)) {
+    return false;
+  }
+
+  // validate and encode transaction node
+  size_t node_out_len = 0;
+  uint8_t *encoded_node =
+      encode_canton_txn_node(&decoded_d_node, &node_out_len);
+
+  if (!encoded_node) {
+    return false;
+  }
+
+  // hash encoded node
+  sha256_Raw(encoded_node, node_out_len, node_hash->hash);
+
+  // copy node id
+  node_hash->node_id = strtol(decoded_d_node.node_id, NULL, 10);
+
+  // free encoded node
+  free(encoded_node);
+
   return true;
 }
 
-bool decode_canton_query(const uint8_t *data,
-                         uint16_t data_size,
-                         canton_query_t *query_out) {
-  if (NULL == data || 0 == data_size || NULL == query_out) {
-    canton_send_error(ERROR_COMMON_ERROR_CORRUPT_DATA_TAG,
-                      ERROR_DATA_FLOW_DECODING_FAILED);
+bool parse_and_hash_canton_metadata_input_contract(
+    const uint8_t *txn_serialized_input_contract,
+    uint32_t txn_input_contract_size,
+    canton_txn_input_contract_hash_t *input_contract_hash) {
+  if (!txn_serialized_input_contract || !txn_input_contract_size ||
+      !input_contract_hash) {
     return false;
   }
 
-  /* zero query_out for safety */
-  memzero(query_out, sizeof(canton_query_t));
-
-  /* create pb stream for reading */
-  pb_istream_t stream = pb_istream_from_buffer(data, data_size);
-
-  /* decode stream */
-  bool status = pb_decode(&stream, CANTON_QUERY_FIELDS, query_out);
-
-  /* send error to host incase failed to decode */
-  if (false == status) {
-    canton_send_error(ERROR_COMMON_ERROR_CORRUPT_DATA_TAG,
-                      ERROR_DATA_FLOW_DECODING_FAILED);
-  }
-
-  return status;
-}
-
-bool encode_canton_result(const canton_result_t *result,
-                          uint8_t *buffer,
-                          uint16_t max_buffer_len,
-                          size_t *bytes_written_out) {
-  if (NULL == result || NULL == buffer || NULL == bytes_written_out ||
-      0 >= max_buffer_len) {
+  // decode protobuf serialized input contract
+  canton_metadata_input_contract_t decoded_input_contract =
+      CANTON_METADATA_INPUT_CONTRACT_INIT_ZERO;
+  if (!decode_canton_serialized_data(txn_serialized_input_contract,
+                                     txn_input_contract_size,
+                                     CANTON_METADATA_INPUT_CONTRACT_FIELDS,
+                                     &decoded_input_contract)) {
     return false;
   }
 
-  /* create a stream to write to the buffer */
-  pb_ostream_t stream = pb_ostream_from_buffer(buffer, max_buffer_len);
-
-  /* encode the message */
-  bool status = pb_encode(&stream, CANTON_RESULT_FIELDS, result);
-
-  if (true == status) {
-    *bytes_written_out = stream.bytes_written;
-  }
-
-  return status;
-}
-
-void canton_send_error(pb_size_t which_error, uint32_t error_code) {
-  canton_result_t result = init_canton_result(CANTON_RESULT_COMMON_ERROR_TAG);
-  result.common_error = init_common_error(which_error, error_code);
-  canton_send_result(&result);
-}
-
-void canton_send_result(const canton_result_t *result) {
-  uint8_t buffer[1700] = {0};
-  size_t bytes_encoded = 0;
-  ASSERT(encode_canton_result(result, buffer, sizeof(buffer), &bytes_encoded));
-  send_response_to_host(buffer, bytes_encoded);
-}
-
-bool canton_get_query(canton_query_t *query, pb_size_t exp_query_tag) {
-  evt_status_t event = get_events(EVENT_CONFIG_USB, MAX_INACTIVITY_TIMEOUT);
-
-  return true != event.p0_event.flag &&
-         decode_canton_query(
-             event.usb_event.p_msg, event.usb_event.msg_size, query) &&
-         check_canton_query(query, exp_query_tag);
-}
-
-bool decode_canton_serialized_data(const uint8_t *data,
-                                   uint16_t data_size,
-                                   const pb_msgdesc_t *fields,
-                                   void *dest_struct) {
-  if (NULL == data || 0 == data_size || NULL == fields || NULL == dest_struct) {
-    canton_send_error(ERROR_COMMON_ERROR_CORRUPT_DATA_TAG,
-                      ERROR_DATA_FLOW_DECODING_FAILED);
+  // validate and encode input contract
+  size_t input_contract_out_len = 0;
+  uint8_t *encoded_input_contract = encode_canton_metadata_input_contract(
+      &decoded_input_contract, &input_contract_out_len);
+  if (!encoded_input_contract) {
     return false;
   }
 
-  /* zero dest_struct for safety */
-  memzero(dest_struct, sizeof(dest_struct));
+  // hash encoded input contract
+  sha256_Raw(encoded_input_contract,
+             input_contract_out_len,
+             input_contract_hash->hash);
 
-  /* create pb stream for reading */
-  pb_istream_t stream = pb_istream_from_buffer(data, data_size);
+  // free encoded input contract
+  free(encoded_input_contract);
 
-  /* decode stream */
-  bool status = pb_decode(&stream, fields, dest_struct);
+  return true;
+}
 
-  /* send error to host incase failed to decode */
-  if (false == status) {
-    canton_send_error(ERROR_COMMON_ERROR_CORRUPT_DATA_TAG,
-                      ERROR_DATA_FLOW_DECODING_FAILED);
+bool validate_and_encode_canton_unsigned_txn() {
+  if (!canton_txn_context) {
+    return false;
   }
-
-  return status;
+  return true;
 }

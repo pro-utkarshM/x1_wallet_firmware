@@ -32,19 +32,18 @@ typedef struct {
    * The structure holds the wallet information of the transaction.
    * This is populated by `handle_initiate_query` present in canton_txn.c
    */
-  // canton_sign_txn_initiate_request_t init_info;
+  canton_sign_txn_initiate_request_t init_info;
 
-  // raw transaction buffer
-  uint8_t *transaction;
-
-  // TODO: decoded unsigned txn
   canton_unsigned_txn *unsigned_txn;
 
+  uint8_t *encoded_txn;
+  size_t encoded_txn_len;
 } canton_txn_context_t;
 
 /*****************************************************************************
  * EXPORTED VARIABLES
  *****************************************************************************/
+ extern canton_txn_context_t *canton_txn_context;
 
 /*****************************************************************************
  * GLOBAL FUNCTION PROTOTYPES
