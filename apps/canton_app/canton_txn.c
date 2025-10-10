@@ -370,25 +370,24 @@ static bool fetch_transaction_meta(canton_query_t *query) {
     return false;
   }
 
-  memcpy(&canton_txn_context->unsigned_txn->txn_meta,
+  memcpy(&canton_txn_context->unsigned_txn.txn_meta,
          &query->sign_txn.txn_meta,
          sizeof(canton_sign_txn_transaction_metadata_t));
 
-  uint32_t node_seeds_count =
-      canton_txn_context->unsigned_txn->txn_meta.node_seeds_count;
-  uint32_t nodes_count = canton_txn_context->unsigned_txn->txn_meta.nodes_count;
+  uint32_t node_seeds_count = query->sign_txn.txn_meta.node_seeds_count;
+  uint32_t nodes_count = query->sign_txn.txn_meta.nodes_count;
 
   // we now know the number of node seeds and nodes
   // allocate memory for input and outputs in canton_txn_context
-  canton_txn_context->unsigned_txn->txn_node_seeds =
+  canton_txn_context->unsigned_txn.txn_node_seeds =
       (canton_txn_node_seed_t *)malloc(sizeof(canton_txn_node_seed_t) *
                                        node_seeds_count);
-  canton_txn_context->unsigned_txn->txn_node_hashes =
+  canton_txn_context->unsigned_txn.txn_node_hashes =
       (canton_txn_node_hash_t *)malloc(sizeof(canton_txn_node_hash_t) *
                                        nodes_count);
 
-  if (canton_txn_context->unsigned_txn->txn_node_seeds == NULL ||
-      canton_txn_context->unsigned_txn->txn_node_hashes == NULL) {
+  if (canton_txn_context->unsigned_txn.txn_node_seeds == NULL ||
+      canton_txn_context->unsigned_txn.txn_node_hashes == NULL) {
     canton_send_error(ERROR_COMMON_ERROR_UNKNOWN_ERROR_TAG,
                       ERROR_DATA_FLOW_INVALID_DATA);
     return false;
@@ -399,7 +398,7 @@ static bool fetch_transaction_meta(canton_query_t *query) {
 
 static bool fetch_valid_txn_node_seed(canton_query_t *query) {
   for (int idx = 0;
-       idx < canton_txn_context->unsigned_txn->txn_meta.node_seeds_count;
+       idx < canton_txn_context->unsigned_txn.txn_meta.node_seeds_count;
        idx++) {
     if (!canton_get_query(query, CANTON_QUERY_SIGN_TXN_TAG) ||
         !check_which_request(query,
@@ -413,18 +412,18 @@ static bool fetch_valid_txn_node_seed(canton_query_t *query) {
       return false;
     }
 
-    memcpy(&canton_txn_context->unsigned_txn->txn_node_seeds[idx],
+    memcpy(&canton_txn_context->unsigned_txn.txn_node_seeds[idx],
            &query->sign_txn.txn_node_seed.node_seed,
            sizeof(canton_txn_node_seed_t));
 
     send_response(CANTON_SIGN_TXN_RESPONSE_TXN_NODE_SEED_ACCEPTED_TAG);
   }
+
   return true;
 }
 
 static bool fetch_and_encode_valid_txn_node(canton_query_t *query) {
-  for (int idx = 0;
-       idx < canton_txn_context->unsigned_txn->txn_meta.nodes_count;
+  for (int idx = 0; idx < canton_txn_context->unsigned_txn.txn_meta.nodes_count;
        idx++) {
     if (!canton_get_query(query, CANTON_QUERY_SIGN_TXN_TAG) ||
         !check_which_request(query,
@@ -497,7 +496,7 @@ static bool fetch_and_encode_valid_txn_node(canton_query_t *query) {
     if (!parse_and_hash_canton_txn_node(
             txn_serialized_node,
             txn_node_total_size,
-            &canton_txn_context->unsigned_txn->txn_node_hashes[idx])) {
+            &canton_txn_context->unsigned_txn.txn_node_hashes[idx])) {
       canton_send_error(ERROR_COMMON_ERROR_CORRUPT_DATA_TAG,
                         ERROR_DATA_FLOW_INVALID_DATA);
       return false;
@@ -505,6 +504,7 @@ static bool fetch_and_encode_valid_txn_node(canton_query_t *query) {
 
     free(txn_serialized_node);
   }
+
   return true;
 }
 
@@ -514,21 +514,21 @@ static bool fetch_canton_meta(canton_query_t *query) {
     return false;
   }
 
-  memcpy(&canton_txn_context->unsigned_txn->canton_meta,
+  memcpy(&canton_txn_context->unsigned_txn.canton_meta,
          &query->sign_txn.canton_meta,
          sizeof(canton_sign_txn_canton_metadata_t));
 
   uint32_t input_contracts_count =
-      canton_txn_context->unsigned_txn->canton_meta.input_contracts_count;
+      canton_txn_context->unsigned_txn.canton_meta.input_contracts_count;
 
   // we now know the number of input contracts
   // allocate memory for input contracts in
   // canton_txn_context
-  canton_txn_context->unsigned_txn->input_contract_hashes =
+  canton_txn_context->unsigned_txn.input_contract_hashes =
       (canton_txn_input_contract_hash_t *)malloc(
           sizeof(canton_txn_input_contract_hash_t) * input_contracts_count);
 
-  if (canton_txn_context->unsigned_txn->input_contract_hashes == NULL) {
+  if (canton_txn_context->unsigned_txn.input_contract_hashes == NULL) {
     canton_send_error(ERROR_COMMON_ERROR_UNKNOWN_ERROR_TAG,
                       ERROR_DATA_FLOW_INVALID_DATA);
     return false;
@@ -539,8 +539,7 @@ static bool fetch_canton_meta(canton_query_t *query) {
 
 static bool fetch_and_encode_valid_meta_input_contract(canton_query_t *query) {
   for (int idx = 0;
-       idx <
-       canton_txn_context->unsigned_txn->canton_meta.input_contracts_count;
+       idx < canton_txn_context->unsigned_txn.canton_meta.input_contracts_count;
        idx++) {
     if (!canton_get_query(query, CANTON_QUERY_SIGN_TXN_TAG) ||
         !check_which_request(
@@ -617,7 +616,7 @@ static bool fetch_and_encode_valid_meta_input_contract(canton_query_t *query) {
     if (!parse_and_hash_canton_metadata_input_contract(
             txn_serialized_input_contract,
             input_contract_total_size,
-            &canton_txn_context->unsigned_txn->input_contract_hashes[idx])) {
+            &canton_txn_context->unsigned_txn.input_contract_hashes[idx])) {
       canton_send_error(ERROR_COMMON_ERROR_CORRUPT_DATA_TAG,
                         ERROR_DATA_FLOW_INVALID_DATA);
       return false;
