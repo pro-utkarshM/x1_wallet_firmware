@@ -1,3 +1,5 @@
+# options for file common/cypherock-common/proto/canton/canton_value.proto
+
 # NameStrings are strings with length <= 1000 that match the regexp ``[A-Za-z\$_][A-Za-z0-9\$_]*``.
 # PackageIdStrings are strings with length <= 64 that match the regexp ``[A-Za-z0-9\-_ ]+``.
 # PartyIdStrings are strings with length <= 255 that match the regexp ``[A-Za-z0-9:\-_ ]+``.
@@ -5,30 +7,30 @@
 # ApplicationIdStrings are strings with length <= 255 that match the regexp ``[A-Za-z0-9#:\-_/ @\|]+``.
 
 # Identifier
-canton.Identifier.package_id type:FT_STATIC max_size:70 fixed_length:false
-canton.Identifier.module_name type:FT_STATIC max_size:1000 fixed_length:false
-canton.Identifier.entity_name type:FT_STATIC max_size:1000 fixed_length:false
+canton.Identifier.package_id type:FT_POINTER max_size:70 fixed_length:false
+canton.Identifier.module_name type:FT_POINTER max_size:1000 fixed_length:false
+canton.Identifier.entity_name type:FT_POINTER max_size:1000 fixed_length:false
 
 # Enum
-canton.Enum.constructor  type:FT_STATIC max_size:1000 fixed_length:false
+canton.Enum.constructor  type:FT_POINTER max_size:1000 fixed_length:false
 
 # Name Strings
-canton.RecordField.label type:FT_STATIC max_size:1000 fixed_length:false
-canton.Variant.constructor type:FT_STATIC max_size:1000 fixed_length:false
+canton.RecordField.label type:FT_POINTER max_size:1000 fixed_length:false
+canton.Variant.constructor type:FT_POINTER max_size:1000 fixed_length:false
 
 # name string
-canton.Value.numeric type:FT_STATIC max_size:1000 fixed_length:false
+canton.Value.numeric type:FT_POINTER max_size:1000 fixed_length:false
 
 # PartyIdStrings
-canton.Value.party type:FT_STATIC max_size:255 fixed_length:false
+canton.Value.party type:FT_POINTER max_size:255 fixed_length:false
 
 # name string
-canton.Value.text type:FT_STATIC max_size:1000 fixed_length:false
+canton.Value.text type:FT_POINTER max_size:1000 fixed_length:false
 
 # LedgerStrings
-canton.Value.contract_id type:FT_STATIC max_size:255 fixed_length:false
+canton.Value.contract_id type:FT_POINTER max_size:255 fixed_length:false
 
-canton.TextMap.Entry.key type:FT_STATIC max_size:1000 fixed_length:false
+canton.TextMap.Entry.key type:FT_POINTER max_size:1000 fixed_length:false
 
 # repeated values
 canton.List.elements type:FT_POINTER max_count:50 fixed_length:false
