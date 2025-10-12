@@ -459,6 +459,7 @@ static bool fetch_and_encode_valid_txn_node(canton_query_t *query) {
     while (1) {
       if (!canton_get_query(query, CANTON_QUERY_SIGN_TXN_TAG) ||
           !check_which_request(query, CANTON_SIGN_TXN_REQUEST_TXN_NODE_TAG)) {
+        free(txn_serialized_node);
         return false;
       }
 
@@ -467,6 +468,7 @@ static bool fetch_and_encode_valid_txn_node(canton_query_t *query) {
           size + payload->chunk.size > txn_node_total_size) {
         canton_send_error(ERROR_COMMON_ERROR_CORRUPT_DATA_TAG,
                           ERROR_DATA_FLOW_INVALID_DATA);
+        free(txn_serialized_node);
         return false;
       }
 
@@ -490,6 +492,7 @@ static bool fetch_and_encode_valid_txn_node(canton_query_t *query) {
     if (size != txn_node_total_size) {
       canton_send_error(ERROR_COMMON_ERROR_CORRUPT_DATA_TAG,
                         ERROR_DATA_FLOW_INVALID_DATA);
+      free(txn_serialized_node);
       return false;
     }
 
@@ -499,6 +502,7 @@ static bool fetch_and_encode_valid_txn_node(canton_query_t *query) {
             &canton_txn_context->unsigned_txn.txn_node_hashes[idx])) {
       canton_send_error(ERROR_COMMON_ERROR_CORRUPT_DATA_TAG,
                         ERROR_DATA_FLOW_INVALID_DATA);
+      free(txn_serialized_node);
       return false;
     }
 
@@ -587,6 +591,7 @@ static bool fetch_and_encode_valid_meta_input_contract(canton_query_t *query) {
           size + payload->chunk.size > input_contract_total_size) {
         canton_send_error(ERROR_COMMON_ERROR_CORRUPT_DATA_TAG,
                           ERROR_DATA_FLOW_INVALID_DATA);
+        free(txn_serialized_input_contract);
         return false;
       }
 
@@ -610,6 +615,7 @@ static bool fetch_and_encode_valid_meta_input_contract(canton_query_t *query) {
     if (size != input_contract_total_size) {
       canton_send_error(ERROR_COMMON_ERROR_CORRUPT_DATA_TAG,
                         ERROR_DATA_FLOW_INVALID_DATA);
+      free(txn_serialized_input_contract);
       return false;
     }
 
@@ -619,6 +625,7 @@ static bool fetch_and_encode_valid_meta_input_contract(canton_query_t *query) {
             &canton_txn_context->unsigned_txn.input_contract_hashes[idx])) {
       canton_send_error(ERROR_COMMON_ERROR_CORRUPT_DATA_TAG,
                         ERROR_DATA_FLOW_INVALID_DATA);
+      free(txn_serialized_input_contract);
       return false;
     }
 
