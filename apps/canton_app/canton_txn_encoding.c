@@ -931,6 +931,10 @@ static size_t get_encoded_metadata_size(
 }
 
 static void encode_value(const canton_value_t *value, uint8_t *buf) {
+  if (!value) {
+    return NULL;
+  }
+
   size_t out_len = 0;
   switch (value->which_sum) {
     case CANTON_VALUE_UNIT_TAG: {
@@ -1095,7 +1099,6 @@ static void encode_value(const canton_value_t *value, uint8_t *buf) {
       size_t tmp = 0;
       // constructor
       encode_string(value->enum_t.constructor, buf + offset, &tmp);
-      offset += tmp;
       break;
     }
 
@@ -1117,8 +1120,9 @@ static void encode_value(const canton_value_t *value, uint8_t *buf) {
       }
       break;
     }
-    default:
+    default: {
       break;
+    }
   }
 }
 
@@ -1402,6 +1406,9 @@ static uint8_t *encode_create_node(const canton_create_t *node,
                                    size_t *out_len) {
   *out_len = get_encoded_create_node_size(node, node_id);
   uint8_t *buf = (uint8_t *)malloc(*out_len);
+  if (!buf) {
+    return NULL;
+  }
   size_t offset = 0;
   size_t tmp_len = 0;
 
@@ -1612,7 +1619,7 @@ uint8_t *encode_canton_txn_node(const canton_daml_transaction_d_node_t *d_node,
 
 uint8_t *encode_canton_metadata_input_contract(
     const canton_metadata_input_contract_t *input_contract,
-    size_t *out_len) {
+    size_t *const out_len) {
   if (!input_contract || !out_len) {
     return NULL;
   }
@@ -1626,10 +1633,17 @@ uint8_t *encode_canton_metadata_input_contract(
 
   uint8_t *final_buf = (uint8_t *)malloc(*out_len);
 
+  if (!final_buf) {
+    return NULL;
+  }
+
   encode_int64(input_contract->created_at, final_buf);
 
   size_t tmp_out_len = 0;
   uint8_t *buf = encode_create_node(&input_contract->v1, -10, &tmp_out_len);
+  if (NULL == buf) {
+    return NULL;
+  }
 
   uint8_t create_node_digest[SHA256_DIGEST_LENGTH];
   sha256_Raw(buf, tmp_out_len, create_node_digest);
@@ -1711,9 +1725,11 @@ bool parse_and_hash_canton_txn_node(const uint8_t *txn_serialized_node,
   // copy node id
   node_hash->node_id = strtol(decoded_d_node.node_id, NULL, 10);
 
+  // release node data
+  pb_release(CANTON_DAML_TRANSACTION_D_NODE_FIELDS, &decoded_d_node);
+
   // free encoded node
   free(encoded_node);
-
   return true;
 }
 
@@ -1741,9 +1757,9 @@ bool validate_and_encode_canton_unsigned_txn() {
 
   /* update transaction_hash with: */
   /* root nodes count */
-  int32_t count = canton_txn_context->unsigned_txn.txn_meta.roots_count;
   uint8_t root_node_count_buf[4];
-  encode_int32(count, root_node_count_buf);
+  encode_int32(canton_txn_context->unsigned_txn.txn_meta.roots_count,
+               root_node_count_buf);
   sha256_Update(
       &transaction_hash_ctx, root_node_count_buf, sizeof(root_node_count_buf));
 
@@ -1776,6 +1792,16 @@ bool validate_and_encode_canton_unsigned_txn() {
       &canton_txn_context->unsigned_txn.canton_meta, &encoded_metadata_size);
 
   sha256_Update(&metadata_hash_ctx, encoded_metadata, encoded_metadata_size);
+  free(encoded_metadata);
+
+  /* input contract length */
+  uint8_t input_contract_count_buf[4];
+  encode_int32(
+      canton_txn_context->unsigned_txn.canton_meta.input_contracts_count,
+      input_contract_count_buf);
+  sha256_Update(&metadata_hash_ctx,
+                input_contract_count_buf,
+                sizeof(input_contract_count_buf));
 
   /* update metadata hash with input contract hashes */
   for (size_t i = 0;
@@ -1791,15 +1817,7 @@ bool validate_and_encode_canton_unsigned_txn() {
   uint8_t metadata_hash_digest[SHA256_DIGEST_LENGTH];
   sha256_Final(&metadata_hash_ctx, metadata_hash_digest);
 
-  /* final transaction encoded buffer */
-  canton_txn_context->encoded_txn_len =
-      sizeof(PREPARED_TRANSACTION_HASH_PURPOSE) +
-      sizeof(HASHING_SCHEME_VERSION_V2) + SHA256_DIGEST_LENGTH +
-      SHA256_DIGEST_LENGTH;
-
-  canton_txn_context->encoded_txn =
-      (uint8_t *)malloc(canton_txn_context->encoded_txn_len);
-
+  /* final encoded txn hash */
   size_t offset = 0;
 
   /* prepared transastion hash purpose */
