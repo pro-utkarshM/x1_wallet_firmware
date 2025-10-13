@@ -42,6 +42,14 @@ typedef struct {
 
 } canton_txn_context_t;
 
+typedef struct {
+  canton_sign_topology_txn_initiate_request_t init_info;
+
+  // TODO: decoded unsigned txn
+  canton_unsigned_topology_txn *unsigned_topology_txn;
+
+} canton_topology_txn_context_t;
+
 /*****************************************************************************
  * EXPORTED VARIABLES
  *****************************************************************************/

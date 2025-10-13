@@ -18,6 +18,7 @@
  * MACROS AND DEFINES
  *****************************************************************************/
 
+#include <stdint.h>
 #define CANTON_NAME "CANTON"
 #define CANTON_LUNIT "CC"
 
@@ -51,6 +52,15 @@ typedef struct {
 typedef struct {
   // TODO: canton fields
 } canton_unsigned_txn;
+
+typedef struct {
+  uint8_t hash[32];
+  // TODO: canton party txn field
+} canton_party_txn;
+
+typedef struct {
+  // TODO: canton fields
+} canton_unsigned_topology_txn;
 
 /*****************************************************************************
  * EXPORTED VARIABLES

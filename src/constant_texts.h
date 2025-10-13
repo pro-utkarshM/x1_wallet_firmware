@@ -65,6 +65,9 @@
 #define UI_TEXT_VERIFY_MEMO_HASH "Verify Memo Hash\n%s"
 #define UI_TEXT_CALLDATA "Calldata"
 
+// canton
+#define UI_TEXT_SIGN_TOPOLOGY_TXN_PROMPT "Sign topology transaction on %s from %s"
+
 // product hash
 extern const char *product_hash;
 
