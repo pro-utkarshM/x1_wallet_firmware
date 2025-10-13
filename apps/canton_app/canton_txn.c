@@ -61,9 +61,12 @@
  * INCLUDES
  *****************************************************************************/
 
+#include <sha2.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "canton/canton_prepared_transaction.pb.h"
+#include "canton/core.pb.h"
 #include "canton/sign_txn.pb.h"
 #include "canton_api.h"
 #include "canton_context.h"
@@ -642,9 +645,11 @@ static bool fetch_and_encode_valid_unsigned_txn_data(canton_query_t *query) {
 }
 
 static bool get_user_verification(void) {
-  // const canton_unsigned_txn *decoded_utxn = canton_txn_context->raw_txn;
+  char to_party_id[CANTON_PARTY_ID_STR_SIZE_MAX] = {0};
 
-  char to_party_id[CANTON_PARTY_ID_SIZE] = "";
+  strcpy(to_party_id,
+         canton_txn_context->unsigned_txn.txn_user_relevant_info
+             .receiver_party_id);
 
   if (use_signature_verification) {
     if (!exchange_validate_stored_signature(to_party_id, sizeof(to_party_id))) {
@@ -659,7 +664,9 @@ static bool get_user_verification(void) {
 
   // verify recipient amount
   uint64_t amount = 0;
-  // memcpy(&amount, &decoded_utxn->Amount, sizeof(uint64_t));
+  memcpy(&amount,
+         &canton_txn_context->unsigned_txn.txn_user_relevant_info.amount,
+         sizeof(uint64_t));
   char amount_string[30] = {'\0'};
   double decimal_amount = (double)amount;
   decimal_amount *= 1e-6;
@@ -693,9 +700,7 @@ static bool sign_txn(der_sig_t *der_signature) {
   set_app_flow_status(CANTON_SIGN_TXN_STATUS_SEED_GENERATED);
 
   uint8_t digest[SHA256_DIGEST_LENGTH] = {0};
-  sha256_Raw(canton_txn_context->encoded_txn,
-             canton_txn_context->encoded_txn_len,
-             digest);
+  sha256_Raw(canton_txn_context->encoded_txn, ENCODED_TXN_LENGTH, digest);
 
   HDNode hdnode = {0};
   derive_hdnode_from_path(canton_txn_context->init_info.derivation_path,

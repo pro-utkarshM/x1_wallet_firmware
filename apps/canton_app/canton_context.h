@@ -46,7 +46,7 @@
 #define CANTON_PARTY_ID_SIZE                                                   \
   (CANTON_PARTY_HINT_STR_SIZE + CANTON_PARTY_ID_SEPARATOR_SIZE +               \
    CANTON_FINGERPRINT_STR_SIZE - 2) /*for null byte*/
-
+#define CANTON_PARTY_ID_STR_SIZE_MAX 256
 /*****************************************************************************
  * TYPEDEFS
  *****************************************************************************/
@@ -62,7 +62,11 @@ typedef struct {
 } canton_txn_node_hash_t;
 
 typedef struct {
-  char receiver_party_id[255];
+  // inside exercise node -> chosen_value -> record -> field(label: "receiver")
+  // -> value
+  char receiver_party_id[CANTON_PARTY_ID_STR_SIZE_MAX];
+  // inside exercise node -> chosen_value -> record -> field(label: "amount")
+  // -> value
   uint64_t amount;
   // TODO: add more fields
 
@@ -79,7 +83,7 @@ typedef struct {
   canton_txn_node_seed_t *txn_node_seeds;
   canton_txn_node_hash_t *txn_node_hashes;
   canton_txn_input_contract_hash_t *input_contract_hashes;
-  canton_txn_user_relevant_info_t *txn_user_relevant_info;
+  canton_txn_user_relevant_info_t txn_user_relevant_info;
 } canton_unsigned_txn;
 
 typedef struct {

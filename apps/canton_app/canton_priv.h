@@ -18,10 +18,15 @@
 
 #include "canton/core.pb.h"
 #include "canton_context.h"
+#include "canton_txn_encoding.h"
+#include "sha2.h"
 
 /*****************************************************************************
  * MACROS AND DEFINES
  *****************************************************************************/
+
+#define ENCODED_TXN_LENGTH                                                     \
+  ((4 + 1 + SHA256_DIGEST_LENGTH + SHA256_DIGEST_LENGTH))
 
 /*****************************************************************************
  * TYPEDEFS
@@ -36,8 +41,7 @@ typedef struct {
 
   canton_unsigned_txn unsigned_txn;
 
-  uint8_t *encoded_txn;
-  size_t encoded_txn_len;
+  uint8_t encoded_txn[ENCODED_TXN_LENGTH];
 } canton_txn_context_t;
 
 typedef struct {
