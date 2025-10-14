@@ -1884,7 +1884,7 @@ bool validate_and_encode_canton_unsigned_txn() {
     sha256_Update(
         &metadata_hash_ctx,
         canton_txn_context->unsigned_txn.input_contract_hashes[i].hash,
-        8 + SHA256_DIGEST_LENGTH);
+        CANTON_INPUT_CONTRACT_HASH_SIZE);
   }
 
   /* finalize metadata hash */
