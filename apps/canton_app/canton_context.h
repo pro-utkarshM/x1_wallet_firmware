@@ -47,6 +47,9 @@
   (CANTON_PARTY_HINT_STR_SIZE + CANTON_PARTY_ID_SEPARATOR_SIZE +               \
    CANTON_FINGERPRINT_STR_SIZE - 2) /*for null byte*/
 #define CANTON_PARTY_ID_STR_SIZE_MAX 256
+#define CANTON_INPUT_CONTRACT_HASH_SIZE 8 + SHA256_DIGEST_LENGTH
+#define ENCODED_TXN_LENGTH                                                     \
+  ((4 + 1 + SHA256_DIGEST_LENGTH + SHA256_DIGEST_LENGTH))
 /*****************************************************************************
  * TYPEDEFS
  *****************************************************************************/
@@ -73,7 +76,7 @@ typedef struct {
 } canton_txn_user_relevant_info_t;
 
 typedef struct {
-  uint8_t hash[8 + SHA256_DIGEST_LENGTH];
+  uint8_t hash[CANTON_INPUT_CONTRACT_HASH_SIZE];
 } canton_txn_input_contract_hash_t;
 
 typedef struct {
