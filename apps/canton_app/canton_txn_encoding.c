@@ -78,6 +78,7 @@
 #include "canton_api.h"
 #include "canton_context.h"
 #include "canton_priv.h"
+#include "pb_decode.h"
 #include "utils.h"
 
 /*****************************************************************************

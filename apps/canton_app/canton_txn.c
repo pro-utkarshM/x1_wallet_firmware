@@ -66,7 +66,6 @@
 #include <string.h>
 
 #include "bip32.h"
-#include "canton/canton_prepared_transaction.pb.h"
 #include "canton/core.pb.h"
 #include "canton/sign_txn.pb.h"
 #include "canton_api.h"
@@ -95,7 +94,7 @@ canton_txn_context_t *canton_txn_context = NULL;
 /*****************************************************************************
  * PRIVATE TYPEDEFS
  *****************************************************************************/
-typedef canton_sign_txn_signature_response_signature_t der_sig_t;
+typedef canton_sign_txn_signature_response_t canton_sig_t;
 
 /*****************************************************************************
  * STATIC FUNCTION PROTOTYPES
@@ -270,7 +269,7 @@ static bool get_user_verification(void);
  * @return false If signature could not be computed - maybe due to some error
  * during seed reconstruction phase
  */
-static bool sign_txn(der_sig_t *der_signature);
+static bool sign_txn(canton_sig_t *der_signature);
 
 /**
  * @brief Sends signature of the CANTON unsigned txn to the host
@@ -284,7 +283,7 @@ static bool sign_txn(der_sig_t *der_signature);
  * or invalid request received from the host
  */
 static bool send_signature(canton_query_t *query,
-                           const der_sig_t *der_signature);
+                           const canton_sig_t *der_signature);
 
 /*****************************************************************************
  * STATIC VARIABLES
@@ -690,7 +689,7 @@ static bool get_user_verification(void) {
   return true;
 }
 
-static bool sign_txn(der_sig_t *der_signature) {
+static bool sign_txn(canton_sig_t *sig) {
   uint8_t seed[64] = {0};
   if (!reconstruct_seed(
           canton_txn_context->init_info.wallet_id, seed, canton_send_error)) {
@@ -711,26 +710,20 @@ static bool sign_txn(der_sig_t *der_signature) {
                           seed,
                           &hdnode);
 
-  uint8_t signature[64];
-
   ed25519_sign(digest,
                SHA256_DIGEST_LENGTH,
                hdnode.private_key,
-               hdnode.public_key,
-               signature);
-
-  der_signature->size = ecdsa_sig_to_der(signature, der_signature->bytes);
+               hdnode.public_key + 1,
+               sig->signature);
 
   memzero(digest, sizeof(digest));
   memzero(seed, sizeof(seed));
   memzero(&hdnode, sizeof(hdnode));
-  memzero(signature, sizeof(signature));
 
   return true;
 }
 
-static bool send_signature(canton_query_t *query,
-                           const der_sig_t *der_signature) {
+static bool send_signature(canton_query_t *query, const canton_sig_t *sig) {
   canton_result_t result = init_canton_result(CANTON_RESULT_SIGN_TXN_TAG);
   result.sign_txn.which_response = CANTON_SIGN_TXN_RESPONSE_SIGNATURE_TAG;
 
@@ -739,8 +732,7 @@ static bool send_signature(canton_query_t *query,
     return false;
   }
 
-  memcpy(
-      &result.sign_txn.signature.signature, der_signature, sizeof(der_sig_t));
+  memcpy(&result.sign_txn.signature, sig, sizeof(canton_sig_t));
 
   canton_send_result(&result);
   return true;
@@ -755,12 +747,12 @@ void canton_sign_transaction(canton_query_t *query) {
       (canton_txn_context_t *)malloc(sizeof(canton_txn_context_t));
   memzero(canton_txn_context, sizeof(canton_txn_context_t));
 
-  der_sig_t der_signature = {0};
+  canton_sig_t sig = {0};
 
   if (handle_initiate_query(query) &&
       fetch_and_encode_valid_unsigned_txn_data(query) &&
-      get_user_verification() && sign_txn(&der_signature) &&
-      send_signature(query, &der_signature)) {
+      get_user_verification() && sign_txn(&sig) &&
+      send_signature(query, &sig)) {
     delay_scr_init(ui_text_check_cysync, DELAY_TIME);
   }
 
