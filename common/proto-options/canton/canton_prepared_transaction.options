@@ -20,7 +20,7 @@ canton.Metadata.SubmitterInfo.command_id type:FT_STATIC max_length:36 fixed_leng
 ## canton.Metadata.GlobalKeyMappingEntry.value type:FT_POINTER
 
 ## Metadata.InputContract
-canton.Metadata.InputContract.event_blob type:FT_STATIC max_size:10000 fixed_length:false
+canton.Metadata.InputContract.event_blob type:FT_STATIC max_size:10 fixed_length:false
 
 # Metadata
 canton.Metadata.synchronizer_id type:FT_STATIC max_length:255 fixed_length:false
