@@ -65,6 +65,7 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "bip32.h"
 #include "canton/canton_prepared_transaction.pb.h"
 #include "canton/core.pb.h"
 #include "canton/sign_txn.pb.h"
@@ -75,6 +76,7 @@
 #include "canton_txn_encoding.h"
 #include "coin_utils.h"
 #include "composable_app_queue.h"
+#include "ed25519.h"
 #include "exchange_main.h"
 #include "reconstruct_wallet_flow.h"
 #include "status_api.h"
@@ -705,13 +707,17 @@ static bool sign_txn(der_sig_t *der_signature) {
   HDNode hdnode = {0};
   derive_hdnode_from_path(canton_txn_context->init_info.derivation_path,
                           canton_txn_context->init_info.derivation_path_count,
-                          SECP256K1_NAME,
+                          ED25519_NAME,
                           seed,
                           &hdnode);
 
   uint8_t signature[64];
-  ecdsa_sign_digest(
-      &secp256k1, hdnode.private_key, digest, signature, NULL, NULL);
+
+  ed25519_sign(digest,
+               SHA256_DIGEST_LENGTH,
+               hdnode.private_key,
+               hdnode.public_key,
+               signature);
 
   der_signature->size = ecdsa_sig_to_der(signature, der_signature->bytes);
 
