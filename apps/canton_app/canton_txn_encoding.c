@@ -62,10 +62,12 @@
 
 #include "canton_txn_encoding.h"
 
+#include <errno.h>
 #include <sha2.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -85,6 +87,9 @@
 /*****************************************************************************
  * PRIVATE MACROS AND DEFINES
  *****************************************************************************/
+
+#define RECEIVER_ADDR_VALUE_RECORD_LABEL "receiver"
+#define AMOUNT_VALUE_RECORD_LABEL "amount"
 
 /*****************************************************************************
  * PRIVATE TYPEDEFS
@@ -188,8 +193,6 @@ static bool encode_hex_string(const char *str,
 static bool encode_hash(const uint8_t *hash,
                         size_t hash_size,
                         uint8_t *out_buf);
-
-#define bytes_from_hex hex_string_to_byte_array
 
 /**
  * @brief Computes canton identifier size
@@ -368,6 +371,15 @@ static uint8_t *encode_node(const canton_daml_transaction_d_node_t *node,
 static uint8_t *encode_metadata(
     const canton_sign_txn_canton_metadata_t *metadata,
     size_t *out_len);
+
+/**
+ * @brief Parses and stores transaction fields which are found inside exercise
+ * node's chosen_value field.
+ * For now it parses & stores Amount, Receiver address.
+ *
+ * @param value[in] Reference to @ref canton_value_t instance
+ */
+static bool parse_store_from_exercise_chosen_value(const canton_value_t *value);
 
 /*****************************************************************************
  * STATIC VARIABLES
@@ -1350,6 +1362,12 @@ static uint8_t *encode_exercise_node(const canton_exercise_t *node,
   offset += tmp_len;
 
   // chosen_value: Value type
+  //
+  // we would want to extract amount, receiver address right before encoding
+  // them. They are stored in exersie node's chosen_value field.
+
+  parse_store_from_exercise_chosen_value(node->chosen_value);
+
   tmp_len = get_encoded_value_size(node->chosen_value);
   encode_value(node->chosen_value, (buf + offset));
   offset += tmp_len;
@@ -1603,6 +1621,58 @@ static uint8_t *encode_metadata(
 
   encode_int64(metadata->preparation_time, buf + offset);
   return buf;
+}
+
+static bool parse_store_from_exercise_chosen_value(
+    const canton_value_t *value) {
+  if (!value) {
+    return false;
+  }
+
+  if (CANTON_VALUE_RECORD_TAG != value->which_sum) {
+    return false;
+  }
+
+  canton_record_t *record = value->record;
+  for (size_t i = 0; i < record->fields_count; i++) {
+    canton_record_field_t *field = &record->fields[i];
+    // make sure value is not null.
+    if (!field->value) {
+      continue;
+    }
+
+    if (0 == strcmp(field->label, RECEIVER_ADDR_VALUE_RECORD_LABEL)) {
+      // when the field contains receiver address.
+      // make sure value is of type party.
+      if (CANTON_VALUE_PARTY_TAG != field->value->which_sum) {
+        continue;
+      }
+
+      // copy party tag
+      strcpy(canton_txn_context->unsigned_txn.txn_user_relevant_info
+                 .receiver_party_id,
+             field->value->party);
+
+    } else if (0 == strcmp(field->label, AMOUNT_VALUE_RECORD_LABEL)) {
+      // when the field contains amount
+      // make sure value is of type numeric.
+      if (CANTON_VALUE_NUMERIC_TAG != field->value->which_sum) {
+        continue;
+      }
+
+      errno = 0;
+      uint64_t amount = strtol(field->value->numeric, NULL, 10);
+
+      // amount parsing failed
+      if (errno == ERANGE) {
+        continue;
+      }
+
+      canton_txn_context->unsigned_txn.txn_user_relevant_info.amount = amount;
+    }
+  }
+
+  return true;
 }
 
 /*****************************************************************************
