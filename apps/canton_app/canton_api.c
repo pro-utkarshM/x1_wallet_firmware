@@ -196,3 +196,31 @@ bool canton_get_query(canton_query_t *query, pb_size_t exp_query_tag) {
              event.usb_event.p_msg, event.usb_event.msg_size, query) &&
          check_canton_query(query, exp_query_tag);
 }
+
+bool decode_canton_serialized_data(const uint8_t *data,
+                                   uint16_t data_size,
+                                   const pb_msgdesc_t *fields,
+                                   void *dest_struct) {
+  if (NULL == data || 0 == data_size || NULL == fields || NULL == dest_struct) {
+    canton_send_error(ERROR_COMMON_ERROR_CORRUPT_DATA_TAG,
+                      ERROR_DATA_FLOW_DECODING_FAILED);
+    return false;
+  }
+
+  /* zero dest_struct for safety */
+  memzero(dest_struct, sizeof(dest_struct));
+
+  /* create pb stream for reading */
+  pb_istream_t stream = pb_istream_from_buffer(data, data_size);
+
+  /* decode stream */
+  bool status = pb_decode(&stream, fields, dest_struct);
+
+  /* send error to host incase failed to decode */
+  if (false == status) {
+    canton_send_error(ERROR_COMMON_ERROR_CORRUPT_DATA_TAG,
+                      ERROR_DATA_FLOW_DECODING_FAILED);
+  }
+
+  return status;
+}

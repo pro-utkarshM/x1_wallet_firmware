@@ -14,6 +14,12 @@
  * INCLUDES
  *****************************************************************************/
 
+#include <stddef.h>
+#include <stdint.h>
+
+#include "canton/sign_txn.pb.h"
+#include "sha2.h"
+
 /*****************************************************************************
  * MACROS AND DEFINES
  *****************************************************************************/
@@ -32,15 +38,18 @@
 #define CANTON_HASH_PURPOSE_SIZE 4
 #define CANTON_FINGERPRINT_PREFIX_SIZE 2
 #define CANTON_FINGERPRINT_SIZE                                                \
-  CANTON_FINGERPRINT_PREFIX_SIZE + SHA256_DIGEST_LENGTH
+  (CANTON_FINGERPRINT_PREFIX_SIZE + SHA256_DIGEST_LENGTH)
 #define CANTON_PARTY_HINT_SIZE 5
-#define CANTON_FINGERPRINT_STR_SIZE ((CANTON_FINGERPRINT_SIZE) * 2) + 1
-#define CANTON_PARTY_HINT_STR_SIZE (CANTON_PARTY_HINT_SIZE * 2) + 1
+#define CANTON_FINGERPRINT_STR_SIZE (((CANTON_FINGERPRINT_SIZE) * 2) + 1)
+#define CANTON_PARTY_HINT_STR_SIZE ((CANTON_PARTY_HINT_SIZE * 2) + 1)
 #define CANTON_PARTY_ID_SEPARATOR_SIZE 3 /*for ::*/
 #define CANTON_PARTY_ID_SIZE                                                   \
-  CANTON_PARTY_HINT_STR_SIZE + CANTON_PARTY_ID_SEPARATOR_SIZE +                \
-      CANTON_FINGERPRINT_STR_SIZE - 2 /*for null byte*/
-
+  (CANTON_PARTY_HINT_STR_SIZE + CANTON_PARTY_ID_SEPARATOR_SIZE +               \
+   CANTON_FINGERPRINT_STR_SIZE - 2) /*for null byte*/
+#define CANTON_PARTY_ID_STR_SIZE_MAX 256
+#define CANTON_INPUT_CONTRACT_HASH_SIZE 8 + SHA256_DIGEST_LENGTH
+#define ENCODED_TXN_LENGTH                                                     \
+  ((4 + 1 + SHA256_DIGEST_LENGTH + SHA256_DIGEST_LENGTH))
 /*****************************************************************************
  * TYPEDEFS
  *****************************************************************************/
@@ -48,8 +57,36 @@
 typedef struct {
 } canton_config_t;
 
+typedef canton_sign_txn_node_seed_node_seed_t canton_txn_node_seed_t;
+
+typedef struct {
+  char node_id;
+  uint8_t hash[SHA256_DIGEST_LENGTH];
+} canton_txn_node_hash_t;
+
+typedef struct {
+  // inside exercise node -> chosen_value -> record -> field(label: "receiver")
+  // -> value
+  char receiver_party_id[CANTON_PARTY_ID_STR_SIZE_MAX];
+  // inside exercise node -> chosen_value -> record -> field(label: "amount")
+  // -> value
+  uint64_t amount;
+  // TODO: add more fields
+
+} canton_txn_user_relevant_info_t;
+
+typedef struct {
+  uint8_t hash[CANTON_INPUT_CONTRACT_HASH_SIZE];
+} canton_txn_input_contract_hash_t;
+
 typedef struct {
   // TODO: canton fields
+  canton_sign_txn_transaction_metadata_t txn_meta;
+  canton_sign_txn_canton_metadata_t canton_meta;
+  canton_txn_node_seed_t *txn_node_seeds;
+  canton_txn_node_hash_t *txn_node_hashes;
+  canton_txn_input_contract_hash_t *input_contract_hashes;
+  canton_txn_user_relevant_info_t txn_user_relevant_info;
 } canton_unsigned_txn;
 
 /*****************************************************************************
