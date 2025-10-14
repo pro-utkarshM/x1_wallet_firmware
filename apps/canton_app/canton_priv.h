@@ -18,6 +18,8 @@
 
 #include "canton/core.pb.h"
 #include "canton_context.h"
+#include "canton_txn_encoding.h"
+#include "sha2.h"
 
 /*****************************************************************************
  * MACROS AND DEFINES
@@ -34,16 +36,15 @@ typedef struct {
    */
   canton_sign_txn_initiate_request_t init_info;
 
-  canton_unsigned_txn *unsigned_txn;
+  canton_unsigned_txn unsigned_txn;
 
-  uint8_t *encoded_txn;
-  size_t encoded_txn_len;
+  uint8_t encoded_txn[ENCODED_TXN_LENGTH];
 } canton_txn_context_t;
 
 /*****************************************************************************
  * EXPORTED VARIABLES
  *****************************************************************************/
- extern canton_txn_context_t *canton_txn_context;
+extern canton_txn_context_t *canton_txn_context;
 
 /*****************************************************************************
  * GLOBAL FUNCTION PROTOTYPES
