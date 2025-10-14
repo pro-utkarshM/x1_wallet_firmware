@@ -382,7 +382,7 @@ static bool fetch_transaction_meta(canton_query_t *query) {
   uint32_t nodes_count = query->sign_txn.txn_meta.nodes_count;
 
   // we now know the number of node seeds and nodes
-  // allocate memory for input and outputs in canton_txn_context
+  // allocate memory for node seeds and node hashes in canton_txn_context
   canton_txn_context->unsigned_txn.txn_node_seeds =
       (canton_txn_node_seed_t *)malloc(sizeof(canton_txn_node_seed_t) *
                                        node_seeds_count);
@@ -587,6 +587,7 @@ static bool fetch_and_encode_valid_meta_input_contract(canton_query_t *query) {
       if (!canton_get_query(query, CANTON_QUERY_SIGN_TXN_TAG) ||
           !check_which_request(
               query, CANTON_SIGN_TXN_REQUEST_META_INPUT_CONTRACT_TAG)) {
+        free(txn_serialized_input_contract);
         return false;
       }
 
@@ -757,6 +758,15 @@ void canton_sign_transaction(canton_query_t *query) {
   }
 
   if (canton_txn_context) {
+    if (canton_txn_context->unsigned_txn.txn_node_seeds) {
+      free(canton_txn_context->unsigned_txn.txn_node_seeds);
+    }
+    if (canton_txn_context->unsigned_txn.txn_node_hashes) {
+      free(canton_txn_context->unsigned_txn.txn_node_hashes);
+    }
+    if (canton_txn_context->unsigned_txn.input_contract_hashes) {
+      free(canton_txn_context->unsigned_txn.input_contract_hashes);
+    }
     free(canton_txn_context);
     canton_txn_context = NULL;
   }

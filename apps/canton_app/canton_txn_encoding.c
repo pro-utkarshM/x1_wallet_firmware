@@ -1758,6 +1758,9 @@ bool parse_and_hash_canton_metadata_input_contract(
          encoded_input_contract,
          input_contract_out_len);
 
+  // release input contract data
+  pb_release(CANTON_METADATA_INPUT_CONTRACT_FIELDS, &decoded_input_contract);
+
   // free encoded input contract
   free(encoded_input_contract);
 
