@@ -14,6 +14,7 @@
  *****************************************************************************/
 
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 
 /*****************************************************************************
@@ -47,6 +48,18 @@
  * @retval false otherwise
  */
 bool canton_derivation_path_guard(const uint32_t *path, uint8_t levels);
+
+/**
+ * @brief Hashes the data using SHA-256 and prepends the canton hash prefix.
+ * @details The function will hash the data using SHA-256 and prepend the canton
+ * hash prefix.
+ *
+ * @param[in] data The data to hash
+ * @param[in] data_size The size of the data
+ * @param[out] hash The hash of the data. Must be at least CANTON_HASH_SIZE
+ * bytes.
+ */
+void sha256_with_prefix(const uint8_t *data, size_t data_size, uint8_t *hash);
 
 /**
  * @brief Generates the party id string from the public key.

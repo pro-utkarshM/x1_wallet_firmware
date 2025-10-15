@@ -36,9 +36,9 @@
 
 #define CANTON_PUB_KEY_SIZE 32
 #define CANTON_HASH_PURPOSE_SIZE 4
-#define CANTON_FINGERPRINT_PREFIX_SIZE 2
-#define CANTON_FINGERPRINT_SIZE                                                \
-  (CANTON_FINGERPRINT_PREFIX_SIZE + SHA256_DIGEST_LENGTH)
+#define CANTON_HASH_PREFIX_SIZE 2
+#define CANTON_HASH_SIZE CANTON_HASH_PREFIX_SIZE + SHA256_DIGEST_LENGTH
+#define CANTON_FINGERPRINT_SIZE CANTON_HASH_PREFIX_SIZE + SHA256_DIGEST_LENGTH
 #define CANTON_PARTY_HINT_SIZE 5
 #define CANTON_FINGERPRINT_STR_SIZE (((CANTON_FINGERPRINT_SIZE) * 2) + 1)
 #define CANTON_PARTY_HINT_STR_SIZE ((CANTON_PARTY_HINT_SIZE * 2) + 1)
@@ -50,6 +50,10 @@
 #define CANTON_INPUT_CONTRACT_HASH_SIZE 8 + SHA256_DIGEST_LENGTH
 #define ENCODED_TXN_LENGTH                                                     \
   ((4 + 1 + SHA256_DIGEST_LENGTH + SHA256_DIGEST_LENGTH))
+#define CANTON_TOPOLOGY_TXN_PARTY_TXNS_COUNT 3
+// TODO: add references to the purpose
+#define CANTON_TOPOLOGY_TXN_HASH_PURPOSE 11
+#define CANTON_MULTI_TOPOLOGY_TXNS_COMBINED_HASH_PURPOSE 55
 /*****************************************************************************
  * TYPEDEFS
  *****************************************************************************/
@@ -90,12 +94,15 @@ typedef struct {
 } canton_unsigned_txn;
 
 typedef struct {
-  uint8_t hash[32];
-  // TODO: canton party txn field
+  uint8_t hash[CANTON_HASH_SIZE];
 } canton_party_txn;
 
 typedef struct {
-  // TODO: canton fields
+  canton_party_txn party_txns[CANTON_TOPOLOGY_TXN_PARTY_TXNS_COUNT];
+  bool has_party_id;
+  char party_id[CANTON_PARTY_ID_SIZE];
+  bool has_public_key;
+  uint8_t public_key[CANTON_PUB_KEY_SIZE];
 } canton_unsigned_topology_txn;
 
 /*****************************************************************************

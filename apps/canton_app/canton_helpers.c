@@ -66,6 +66,7 @@
 
 #include "canton_context.h"
 #include "coin_utils.h"
+#include "sha2.h"
 
 /*****************************************************************************
  * EXTERN VARIABLES
@@ -91,13 +92,12 @@
  * GLOBAL VARIABLES
  *****************************************************************************/
 // For references to values, check get_party_id function
-uint8_t CANTON_HASH_PURPOSE[CANTON_HASH_PURPOSE_SIZE] = {0x00,
-                                                         0x00,
-                                                         0x00,
-                                                         0x0c};
-uint8_t CANTON_FINGERPRINT_PREFIX[CANTON_FINGERPRINT_PREFIX_SIZE] = {0x12,
-                                                                     0x20};
-const char CANTON_PARTY_ID_SEPARATOR[] = "::";
+static uint8_t CANTON_HASH_PURPOSE[CANTON_HASH_PURPOSE_SIZE] = {0x00,
+                                                                0x00,
+                                                                0x00,
+                                                                0x0c};
+static uint8_t CANTON_HASH_PREFIX[CANTON_HASH_PREFIX_SIZE] = {0x12, 0x20};
+static const char CANTON_PARTY_ID_SEPARATOR[] = "::";
 
 /*****************************************************************************
  * STATIC FUNCTIONS
@@ -122,6 +122,18 @@ bool canton_derivation_path_guard(const uint32_t *path, uint8_t levels) {
             is_hardened(address));
 
   return status;
+}
+
+void sha256_with_prefix(const uint8_t *data, size_t data_size, uint8_t *hash) {
+  if (!data || !hash || data_size == 0) {
+    return;
+  }
+
+  uint8_t digest[SHA256_DIGEST_LENGTH] = {0};
+  sha256_Raw(data, data_size, digest);
+
+  memcpy(hash, CANTON_HASH_PREFIX, CANTON_HASH_PREFIX_SIZE);
+  memcpy(hash + CANTON_HASH_PREFIX_SIZE, digest, SHA256_DIGEST_LENGTH);
 }
 
 bool get_party_id(const uint8_t *public_key, char *party_id) {
@@ -151,16 +163,9 @@ bool get_party_id(const uint8_t *public_key, char *party_id) {
   memcpy(hash_buf, CANTON_HASH_PURPOSE, CANTON_HASH_PURPOSE_SIZE);
   memcpy(hash_buf + CANTON_HASH_PURPOSE_SIZE, public_key, CANTON_PUB_KEY_SIZE);
 
+  sha256_with_prefix(hash_buf, sizeof(hash_buf), fingerprint);
+
   uint8_t digest[SHA256_DIGEST_LENGTH] = {0};
-  sha256_Raw(hash_buf, sizeof(hash_buf), digest);
-
-  memcpy(
-      fingerprint, CANTON_FINGERPRINT_PREFIX, CANTON_FINGERPRINT_PREFIX_SIZE);
-  memcpy(fingerprint + CANTON_FINGERPRINT_PREFIX_SIZE,
-         digest,
-         SHA256_DIGEST_LENGTH);
-
-  memzero(digest, sizeof(digest));
   sha256_Raw(fingerprint, CANTON_FINGERPRINT_SIZE, digest);
   memcpy(party_hint, digest, CANTON_PARTY_HINT_SIZE);
 
