@@ -384,8 +384,8 @@ static bool fetch_transaction_meta(canton_query_t *query) {
   // we now know the number of node seeds and nodes
   // allocate memory for node seeds and node hashes in canton_txn_context
   canton_txn_context->unsigned_txn.txn_node_seeds =
-      (canton_txn_node_seed_t *)malloc(sizeof(canton_txn_node_seed_t) *
-                                       node_seeds_count);
+      (canton_node_seed_t *)malloc(sizeof(canton_node_seed_t) *
+                                   node_seeds_count);
   canton_txn_context->unsigned_txn.txn_node_hashes =
       (canton_txn_node_hash_t *)malloc(sizeof(canton_txn_node_hash_t) *
                                        nodes_count);
@@ -418,7 +418,7 @@ static bool fetch_valid_txn_node_seed(canton_query_t *query) {
 
     memcpy(&canton_txn_context->unsigned_txn.txn_node_seeds[idx],
            &query->sign_txn.txn_node_seed.node_seed,
-           sizeof(canton_txn_node_seed_t));
+           sizeof(canton_node_seed_t));
 
     send_response(CANTON_SIGN_TXN_RESPONSE_TXN_NODE_SEED_ACCEPTED_TAG);
   }

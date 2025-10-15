@@ -107,8 +107,8 @@
  *
  * @returns Returns node seed if found otherwise null
  */
-static inline const canton_sign_txn_node_seed_node_seed_t *
-get_node_seed_from_node_id(int32_t node_id);
+static inline const canton_node_seed_t *get_node_seed_from_node_id(
+    int32_t node_id);
 
 /**
  * @brief Finds hashed encoded node with the given node id
@@ -403,9 +403,9 @@ const static uint8_t ROLLBACK_NODE_TAG = 0x03;
  * STATIC FUNCTIONS
  *****************************************************************************/
 
-static inline const canton_sign_txn_node_seed_node_seed_t *
-get_node_seed_from_node_id(int32_t node_id) {
-  const canton_sign_txn_node_seed_node_seed_t *node_seeds =
+static inline const canton_node_seed_t *get_node_seed_from_node_id(
+    int32_t node_id) {
+  const canton_node_seed_t *node_seeds =
       canton_txn_context->unsigned_txn.txn_node_seeds;
 
   for (size_t i = 0;
@@ -734,8 +734,7 @@ static size_t get_encoded_exercise_node_size(const canton_exercise_t *node,
   total_buf_size += 1;
 
   // hash of seed
-  const canton_sign_txn_node_seed_node_seed_t *seed =
-      get_node_seed_from_node_id(node_id);
+  const canton_node_seed_t *seed = get_node_seed_from_node_id(node_id);
   if (seed == NULL) {
     return -1;
   }
@@ -836,8 +835,7 @@ static size_t get_encoded_create_node_size(const canton_create_t *node,
 
   // encode seeds
   total_buf_size += 1;    // `optional` flag
-  const canton_sign_txn_node_seed_node_seed_t *seed =
-      get_node_seed_from_node_id(node_id);
+  const canton_node_seed_t *seed = get_node_seed_from_node_id(node_id);
   if (NULL != seed) {
     total_buf_size += seed->seed.size;
   }
@@ -1299,8 +1297,7 @@ static uint8_t *encode_exercise_node(const canton_exercise_t *node,
   offset += 1;
 
   // hash of seed with this node id
-  const canton_sign_txn_node_seed_node_seed_t *seed =
-      get_node_seed_from_node_id(node_id);
+  const canton_node_seed_t *seed = get_node_seed_from_node_id(node_id);
   if (NULL == seed) {
     free(buf);
     return NULL;
@@ -1447,8 +1444,7 @@ static uint8_t *encode_create_node(const canton_create_t *node,
   // node seed: optional
   *(buf + offset) = 0x00;
   offset += 1;
-  const canton_sign_txn_node_seed_node_seed_t *seed =
-      get_node_seed_from_node_id(node_id);
+  const canton_node_seed_t *seed = get_node_seed_from_node_id(node_id);
   if (NULL != seed) {
     *(buf + offset - 1) = 0x01;
     encode_hash(seed->seed.bytes, seed->seed.size, (buf + offset));

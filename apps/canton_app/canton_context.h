@@ -61,8 +61,6 @@
 typedef struct {
 } canton_config_t;
 
-typedef canton_sign_txn_node_seed_node_seed_t canton_txn_node_seed_t;
-
 typedef struct {
   char node_id;
   uint8_t hash[SHA256_DIGEST_LENGTH];
@@ -87,7 +85,7 @@ typedef struct {
   // TODO: canton fields
   canton_sign_txn_transaction_metadata_t txn_meta;
   canton_sign_txn_canton_metadata_t canton_meta;
-  canton_txn_node_seed_t *txn_node_seeds;
+  canton_node_seed_t *txn_node_seeds;
   canton_txn_node_hash_t *txn_node_hashes;
   canton_txn_input_contract_hash_t *input_contract_hashes;
   canton_txn_user_relevant_info_t txn_user_relevant_info;

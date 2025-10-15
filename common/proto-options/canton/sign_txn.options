@@ -6,10 +6,10 @@ canton.SignTxnSignatureResponse.signature type:FT_STATIC max_size:64 fixed_lengt
 canton.SignTxnTransactionMetadata.version type:FT_STATIC max_size:10 fixed_length:false
 canton.SignTxnTransactionMetadata.roots type:FT_STATIC max_size:10 max_count:50 fixed_length:false
 
-canton.SignTxnNodeSeed.NodeSeed.seed type:FT_STATIC max_size:255 fixed_length:false
+canton.NodeSeed.seed type:FT_STATIC max_size:255 fixed_length:false
 
-canton.SignTxnCantonMetadata.SubmitterInfo.act_as type:FT_STATIC max_length:255 max_count:5 fixed_length:false
-canton.SignTxnCantonMetadata.SubmitterInfo.command_id type:FT_STATIC max_length:36 fixed_length:false
+canton.SubmitterInfo.act_as type:FT_STATIC max_length:255 max_count:5 fixed_length:false
+canton.SubmitterInfo.command_id type:FT_STATIC max_length:36 fixed_length:false
 
 canton.SignTxnCantonMetadata.synchronizer_id type:FT_STATIC max_length:255 fixed_length:false
 canton.SignTxnCantonMetadata.transaction_uuid type:FT_STATIC max_length:36 fixed_length:false
