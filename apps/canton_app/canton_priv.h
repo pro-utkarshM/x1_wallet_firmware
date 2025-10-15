@@ -41,6 +41,13 @@ typedef struct {
   uint8_t encoded_txn[ENCODED_TXN_LENGTH];
 } canton_txn_context_t;
 
+typedef struct {
+  canton_sign_topology_txn_initiate_request_t init_info;
+
+  canton_unsigned_topology_txn unsigned_topology_txn;
+
+} canton_topology_txn_context_t;
+
 /*****************************************************************************
  * EXPORTED VARIABLES
  *****************************************************************************/
@@ -69,5 +76,14 @@ void canton_get_pub_keys(canton_query_t *query);
  * @param query Reference to the decoded query struct from the host app
  */
 void canton_sign_transaction(canton_query_t *query);
+
+/**
+ * @brief Entry point for sign_topology_transaction type queries
+ * @details Function handles complete flow required to sign and required
+ * transaction, this includes: recieving further data, parsing and validating
+ * data, user confirmation, returning data to the host. And incase of any error,
+ * returns error to the host.
+ */
+void canton_sign_topology_transaction(canton_query_t *query);
 
 #endif
