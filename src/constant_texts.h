@@ -66,7 +66,9 @@
 #define UI_TEXT_CALLDATA "Calldata"
 
 // canton
-#define UI_TEXT_SIGN_TOPOLOGY_TXN_PROMPT "Sign topology transaction on %s from %s"
+#define UI_TEXT_SIGN_TOPOLOGY_TXN_PROMPT                                       \
+  "Sign topology transaction on %s from %s"
+#define UI_TEXT_VERIFY_PARTY_ID "Verify Party ID"
 
 // product hash
 extern const char *product_hash;
