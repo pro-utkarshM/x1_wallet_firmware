@@ -82,4 +82,34 @@ bool parse_and_hash_canton_metadata_input_contract(
  */
 bool validate_and_encode_canton_unsigned_txn();
 
+/**
+ * @brief Hashes the (pupose + data) using SHA-256 and prepends the canton hash
+ * prefix.
+ * @details The function will hash the data prepended with purpose (purpose +
+ * data) using SHA-256 and prepend the canton hash prefix.
+ *
+ * @param[in] purpose The purpose of the hash
+ * @param[in] data The data to hash
+ * @param[in] data_size The size of the data
+ * @param[out] hash The hash of the data. Must be at least CANTON_HASH_SIZE
+ * bytes.
+ */
+void sha256_canton(int32_t purpose,
+                   const uint8_t *data,
+                   size_t data_size,
+                   uint8_t *hash);
+
+/**
+ * @brief Hashes the party txns and stores the hash in the hash parameter.
+ * @details The function will sort the party txns, encode the count and the
+ * hashes and hash the combined representation.
+ *
+ * @param[in] party_txns The party txns to hash
+ * @param[in] party_txns_count The count of the party txns
+ * @param[out] hash The hash of the party txns. Must be at least
+ * CANTON_HASH_SIZE bytes.
+ */
+void hash_party_txns(canton_party_txn *party_txns,
+                     int32_t party_txns_count,
+                     uint8_t *hash);
 #endif    // CANTON_TXN_ENCODING_H

@@ -77,6 +77,7 @@
 #include "canton/sign_txn.pb.h"
 #include "canton_api.h"
 #include "canton_context.h"
+#include "canton_helpers.h"
 #include "canton_priv.h"
 #include "pb_decode.h"
 #include "utils.h"
@@ -1676,6 +1677,12 @@ static bool parse_store_from_exercise_chosen_value(
   return true;
 }
 
+static int compare_hashes(const void *a, const void *b) {
+  const canton_party_txn *party_txn_a = (const canton_party_txn *)a;
+  const canton_party_txn *party_txn_b = (const canton_party_txn *)b;
+  return memcmp(party_txn_a->hash, party_txn_b->hash, CANTON_HASH_SIZE);
+}
+
 /*****************************************************************************
  * GLOBAL FUNCTIONS
  *****************************************************************************/
@@ -1918,4 +1925,57 @@ bool validate_and_encode_canton_unsigned_txn() {
          SHA256_DIGEST_LENGTH);
 
   return true;
+}
+
+void sha256_canton(int32_t purpose,
+                   const uint8_t *data,
+                   size_t data_size,
+                   uint8_t *hash) {
+  uint8_t buf[4 + data_size];
+  memzero(buf, sizeof(buf));
+
+  encode_int32(purpose, buf);
+
+  memcpy(buf + 4, data, data_size);
+  sha256_with_prefix(buf, sizeof(buf), hash);
+}
+
+void hash_party_txns(canton_party_txn *party_txns,
+                     int32_t party_txns_count,
+                     uint8_t *hash) {
+  if (!party_txns || !hash || party_txns_count == 0) {
+    return;
+  }
+
+  // sort the party txns
+  qsort(party_txns, party_txns_count, sizeof(canton_party_txn), compare_hashes);
+
+  // combine the hashes of the txns
+  // combined_hashes = [encoded_party_txns_count, (encoded_individual_hash_size,
+  // encoded_individual_hash), ...]
+  size_t encoded_int32_size = 4;
+  size_t individual_hash_size = CANTON_HASH_PREFIX_SIZE + SHA256_DIGEST_LENGTH;
+  size_t combined_hashes_size =
+      encoded_int32_size +
+      (party_txns_count * (encoded_int32_size + individual_hash_size));
+
+  uint8_t combined_hashes[combined_hashes_size];
+  memzero(combined_hashes, combined_hashes_size);
+
+  size_t offset = 0;
+  encode_int32(party_txns_count, combined_hashes + offset);
+  offset += encoded_int32_size;
+
+  for (size_t i = 0; i < party_txns_count; i++) {
+    encode_int32(individual_hash_size, combined_hashes + offset);
+    offset += encoded_int32_size;
+
+    memcpy(combined_hashes + offset, party_txns[i].hash, individual_hash_size);
+    offset += individual_hash_size;
+  }
+
+  sha256_canton(CANTON_MULTI_TOPOLOGY_TXNS_COMBINED_HASH_PURPOSE,
+                combined_hashes,
+                sizeof(combined_hashes),
+                hash);
 }
