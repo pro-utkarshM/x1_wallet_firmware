@@ -62,7 +62,7 @@ typedef struct {
 } canton_config_t;
 
 typedef struct {
-  char node_id;
+  int32_t node_id;
   uint8_t hash[SHA256_DIGEST_LENGTH];
 } canton_txn_node_hash_t;
 

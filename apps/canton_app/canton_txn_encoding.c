@@ -705,7 +705,7 @@ static size_t get_encoded_fetch_node_size(const canton_fetch_t *node,
   total_buf_size += 1;
   if (node->has_interface_id) {
     // interface_id: identifier
-    total_buf_size += get_encoded_identifier_size(&node->template_id);
+    total_buf_size += get_encoded_identifier_size(&node->interface_id);
   }
 
   // acting_parties: 4 bytes: int32
@@ -1079,18 +1079,18 @@ static void encode_value(const canton_value_t *value, uint8_t *buf) {
       *(buf + offset) = 0x00;
       offset += 1;
 
+      size_t tmp = 0;
       if (value->variant->has_variant_id) {
         *(buf + offset - 1) = 0x01;
-        size_t tmp = 0;
         encode_identifier(&value->variant->variant_id, buf + offset, &tmp);
         offset += tmp;
-
-        encode_string(value->variant->constructor, buf + offset, &tmp);
-        offset += tmp;
-
-        encode_value(value->variant->value, buf + offset);
-        get_encoded_value_size(value->variant->value);
       }
+      tmp = 0;
+      encode_string(value->variant->constructor, buf + offset, &tmp);
+      offset += tmp;
+
+      encode_value(value->variant->value, buf + offset);
+      offset += get_encoded_value_size(value->variant->value);
       break;
     }
     case CANTON_VALUE_ENUM_T_TAG: {
@@ -1101,14 +1101,14 @@ static void encode_value(const canton_value_t *value, uint8_t *buf) {
       *(buf + offset) = 0x00;
       offset += 1;
 
-      if (value->variant->has_variant_id) {
-        size_t tmp = 0;
+      size_t tmp = 0;
+      if (value->enum_t.has_enum_id) {
         *(buf + offset - 1) = 0x01;
-        encode_identifier(&value->variant->variant_id, buf + offset, &tmp);
+        encode_identifier(&value->enum_t.enum_id, buf + offset, &tmp);
         offset += tmp;
       }
 
-      size_t tmp = 0;
+      tmp = 0;
       // constructor
       encode_string(value->enum_t.constructor, buf + offset, &tmp);
       break;
