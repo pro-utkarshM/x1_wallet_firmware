@@ -1470,9 +1470,13 @@ static uint8_t *encode_create_node(const canton_create_t *node,
   encode_string(node->package_name, (buf + offset), &tmp_len);
   offset += tmp_len;
 
-  // encode_identifier
-  encode_identifier(&node->template_id, (buf + offset), &tmp_len);
-  offset += tmp_len;
+  if (node->has_template_id) {
+    // encode_identifier
+    encode_identifier(&node->template_id, (buf + offset), &tmp_len);
+    offset += tmp_len;
+
+    parse_display_info(node->template_id.entity_name, node->argument);
+  }
 
   // argument: value
   encode_value(node->argument, buf + offset);
@@ -1753,7 +1757,29 @@ static void parse_display_info(const char *choice_id,
   } else if (strcmp(choice_id, REJECT_CHOICE_ID) == 0) {
     display_info->txn_type = CANTON_TXN_TYPE_REJECT;
   } else if (strcmp(choice_id, PREAPPROVAL_CHOICE_ID) == 0) {
+    if (!record->has_record_id ||
+        strcmp(record->record_id.entity_name, PREAPPROVAL_CHOICE_ID) != 0) {
+      return;
+    }
     display_info->txn_type = CANTON_TXN_TYPE_PREAPPROVAL;
+
+    for (size_t i = 0; i < record->fields_count; i++) {
+      canton_record_field_t *preapproval_field = &record->fields[i];
+      canton_value_t *preapproval_value = preapproval_field->value;
+
+      if (!preapproval_value) {
+        continue;
+      }
+
+      if (strcmp(preapproval_field->label, RECEIVER_LABEL) == 0) {
+        if (CANTON_VALUE_PARTY_TAG != preapproval_value->which_sum) {
+          continue;
+        }
+        strcpy(display_info->receiver_party_id, preapproval_value->party);
+      }
+
+      // TODO: parse other fields if required. ex 'provider'
+    }
   }
 }
 
@@ -1809,11 +1835,6 @@ uint8_t *encode_canton_metadata_input_contract(
   memcpy(final_buf + 8, create_node_digest, SHA256_DIGEST_LENGTH);
 
   free(buf);
-
-  const canton_create_t *v1 = &input_contract->v1;
-  if (v1->has_template_id) {
-    parse_display_info(v1->template_id.entity_name, v1->argument);
-  }
 
   return final_buf;
 }
