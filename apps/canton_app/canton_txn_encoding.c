@@ -396,6 +396,7 @@ const static char *TRANSFER_CHOICE_ID = "TransferFactory_Transfer";
 const static char *TRANSFER_LABEL = "transfer";
 const static char *TAP_CHOICE_ID = "AmuletRules_DevNet_Tap";
 const static char *TAP_LABEL = "tap";
+const static char *CANTON_TRANSFER_INSTRUCTION = "AmuletTransferInstruction";
 const static char *SENDER_LABEL = "sender";
 const static char *RECEIVER_LABEL = "receiver";
 const static char *AMOUNT_LABEL = "amount";
@@ -1628,6 +1629,72 @@ static uint8_t *encode_metadata(
   return buf;
 }
 
+static void parse_display_info_from_transfer_record(
+    const canton_record_t *record,
+    canton_txn_display_info_t *display_info) {
+  if (!record || !display_info) {
+    return;
+  }
+  for (size_t i = 0; i < record->fields_count; i++) {
+    canton_record_field_t *transfer_field = &record->fields[i];
+    canton_value_t *transfer_value = transfer_field->value;
+
+    if (!transfer_value) {
+      continue;
+    }
+
+    if (strcmp(transfer_field->label, TRANSFER_LABEL) == 0) {
+      if (CANTON_VALUE_RECORD_TAG != transfer_value->which_sum) {
+        continue;
+      }
+
+      display_info->start_time = display_info->expiry_time = 0;
+
+      canton_record_t *transfer_record = transfer_value->record;
+      for (size_t j = 0; j < transfer_record->fields_count; j++) {
+        canton_record_field_t *display_field = &transfer_record->fields[j];
+        canton_value_t *display_value = display_field->value;
+
+        if (!display_value) {
+          continue;
+        }
+
+        if (strcmp(display_field->label, SENDER_LABEL) == 0) {
+          if (CANTON_VALUE_PARTY_TAG != display_value->which_sum) {
+            continue;
+          }
+          strcpy(display_info->sender_party_id, display_value->party);
+
+        } else if (strcmp(display_field->label, RECEIVER_LABEL) == 0) {
+          if (CANTON_VALUE_PARTY_TAG != display_value->which_sum) {
+            continue;
+          }
+          strcpy(display_info->receiver_party_id, display_value->party);
+
+        } else if (strcmp(display_field->label, AMOUNT_LABEL) == 0) {
+          if (CANTON_VALUE_NUMERIC_TAG != display_value->which_sum) {
+            continue;
+          }
+          strcpy(display_info->amount, display_value->numeric);
+        } else if (strcmp(display_field->label, START_TIME_LABEL) == 0) {
+          if (CANTON_VALUE_TIMESTAMP_TAG != display_value->which_sum) {
+            continue;
+          }
+          display_info->start_time = display_value->timestamp;
+        } else if (strcmp(display_field->label, EXPIRY_TIME_LABEL) == 0) {
+          if (CANTON_VALUE_TIMESTAMP_TAG != display_value->which_sum) {
+            continue;
+          }
+          display_info->expiry_time = display_value->timestamp;
+        }
+
+        // TODO: Parse other fields as well like instrumentId(maybe to check
+        // the coin/token), meta->memo
+      }
+    }
+  }
+}
+
 static void parse_display_info(const char *choice_id,
                                const canton_value_t *chosen_value) {
   if (!choice_id || !chosen_value) {
@@ -1644,65 +1711,7 @@ static void parse_display_info(const char *choice_id,
   // for send, compare choice_id with TransferFactory_Transfer
   if (strcmp(choice_id, TRANSFER_CHOICE_ID) == 0) {
     strcpy(display_info->transaction_type, TRANSFER_LABEL);
-
-    for (size_t i = 0; i < record->fields_count; i++) {
-      canton_record_field_t *transfer_field = &record->fields[i];
-      canton_value_t *transfer_value = transfer_field->value;
-
-      if (!transfer_value) {
-        continue;
-      }
-
-      if (strcmp(transfer_field->label, TRANSFER_LABEL) == 0) {
-        if (CANTON_VALUE_RECORD_TAG != transfer_value->which_sum) {
-          continue;
-        }
-
-        display_info->start_time = display_info->expiry_time = 0;
-
-        canton_record_t *transfer_record = transfer_value->record;
-        for (size_t j = 0; j < transfer_record->fields_count; j++) {
-          canton_record_field_t *display_field = &transfer_record->fields[j];
-          canton_value_t *display_value = display_field->value;
-
-          if (!display_value) {
-            continue;
-          }
-
-          if (strcmp(display_field->label, SENDER_LABEL) == 0) {
-            if (CANTON_VALUE_PARTY_TAG != display_value->which_sum) {
-              continue;
-            }
-            strcpy(display_info->sender_party_id, display_value->party);
-
-          } else if (strcmp(display_field->label, RECEIVER_LABEL) == 0) {
-            if (CANTON_VALUE_PARTY_TAG != display_value->which_sum) {
-              continue;
-            }
-            strcpy(display_info->receiver_party_id, display_value->party);
-
-          } else if (strcmp(display_field->label, AMOUNT_LABEL) == 0) {
-            if (CANTON_VALUE_NUMERIC_TAG != display_value->which_sum) {
-              continue;
-            }
-            strcpy(display_info->amount, display_value->numeric);
-          } else if (strcmp(display_field->label, START_TIME_LABEL) == 0) {
-            if (CANTON_VALUE_TIMESTAMP_TAG != display_value->which_sum) {
-              continue;
-            }
-            display_info->start_time = display_value->timestamp;
-          } else if (strcmp(display_field->label, EXPIRY_TIME_LABEL) == 0) {
-            if (CANTON_VALUE_TIMESTAMP_TAG != display_value->which_sum) {
-              continue;
-            }
-            display_info->expiry_time = display_value->timestamp;
-          }
-
-          // TODO: Parse other fields as well like instrumentId(maybe to check
-          // the coin/toke), timestamps, meta->memo
-        }
-      }
-    }
+    parse_display_info_from_transfer_record(record, display_info);
   } else if (strcmp(choice_id, TAP_CHOICE_ID) == 0) {
     strcpy(display_info->transaction_type, TAP_LABEL);
 
@@ -1727,6 +1736,13 @@ static void parse_display_info(const char *choice_id,
         strcpy(display_info->amount, tap_value->numeric);
       }
     }
+  } else if (strcmp(choice_id, CANTON_TRANSFER_INSTRUCTION) == 0) {
+    // txn is either accept, reject or withdraw
+    if (!record->has_record_id || strcmp(record->record_id.entity_name,
+                                         CANTON_TRANSFER_INSTRUCTION) != 0) {
+      return;
+    }
+    parse_display_info_from_transfer_record(record, display_info);
   }
 }
 
@@ -1782,6 +1798,11 @@ uint8_t *encode_canton_metadata_input_contract(
   memcpy(final_buf + 8, create_node_digest, SHA256_DIGEST_LENGTH);
 
   free(buf);
+
+  const canton_create_t *v1 = &input_contract->v1;
+  if (v1->has_template_id) {
+    parse_display_info(v1->template_id.entity_name, v1->argument);
+  }
 
   return final_buf;
 }
