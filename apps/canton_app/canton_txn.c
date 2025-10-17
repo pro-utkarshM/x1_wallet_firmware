@@ -690,6 +690,34 @@ static bool get_user_verification(void) {
     return false;
   }
 
+  // verify expiry
+  if (display_info->start_time != 0 && display_info->expiry_time != 0) {
+    uint64_t diff = display_info->expiry_time - display_info->start_time;
+    uint64_t minute_factor = (uint64_t)60 * 60 * 1000000;
+    uint64_t mins = diff % minute_factor;
+    diff /= minute_factor;
+
+    uint64_t hours = diff % 24;
+    diff /= 24;
+
+    uint64_t days = diff;
+
+    char expiry_display[30] = {'\0'};
+    if (days != 0) {
+      snprintf(expiry_display, sizeof(expiry_display), UI_TEST_DAYS, days);
+    }
+    if (hours != 0) {
+      snprintf(expiry_display, sizeof(expiry_display), UI_TEST_HOURS, hours);
+    }
+    if (mins != 0) {
+      snprintf(expiry_display, sizeof(expiry_display), UI_TEST_MINS, mins);
+    }
+
+    if (!core_scroll_page(UI_TEST_EXPIRY, expiry_display, canton_send_error)) {
+      return false;
+    }
+  }
+
   set_app_flow_status(CANTON_SIGN_TXN_STATUS_VERIFY);
 
   return true;

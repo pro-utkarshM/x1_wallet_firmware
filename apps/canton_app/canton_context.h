@@ -75,6 +75,8 @@ typedef struct {
   // inside exercise node -> chosen_value -> record -> field(label: "amount")
   // -> value
   char amount[30];
+  uint64_t start_time;
+  uint64_t expiry_time;
   // TODO: add more fields
 
 } canton_txn_display_info_t;

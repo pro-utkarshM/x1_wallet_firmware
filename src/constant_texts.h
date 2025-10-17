@@ -72,6 +72,10 @@
 #define UI_TEXT_SENDER_PARTY_ID "Sender PartyId"
 #define UI_TEXT_RECEIVER_PARTY_ID "Receiver PartyId"
 #define UI_TEXT_TRANSACTION_TYPE "Transaction Type"
+#define UI_TEST_DAYS "%llu days"
+#define UI_TEST_HOURS "%llu hours"
+#define UI_TEST_MINS "%llu mins"
+#define UI_TEST_EXPIRY "Expiry"
 
 // product hash
 extern const char *product_hash;
