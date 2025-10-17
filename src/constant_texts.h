@@ -68,7 +68,10 @@
 // canton
 #define UI_TEXT_SIGN_TOPOLOGY_TXN_PROMPT                                       \
   "Sign topology transaction on %s from %s"
-#define UI_TEXT_VERIFY_PARTY_ID "Verify Party ID"
+#define UI_TEXT_VERIFY_PARTY_ID "Verify PartyId"
+#define UI_TEXT_SENDER_PARTY_ID "Sender PartyId"
+#define UI_TEXT_RECEIVER_PARTY_ID "Receiver PartyId"
+#define UI_TEXT_TRANSACTION_TYPE "Transaction Type"
 
 // product hash
 extern const char *product_hash;

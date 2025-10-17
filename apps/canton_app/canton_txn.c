@@ -75,6 +75,7 @@
 #include "canton_txn_encoding.h"
 #include "coin_utils.h"
 #include "composable_app_queue.h"
+#include "constant_texts.h"
 #include "ed25519.h"
 #include "exchange_main.h"
 #include "reconstruct_wallet_flow.h"
@@ -647,33 +648,37 @@ static bool fetch_and_encode_valid_unsigned_txn_data(canton_query_t *query) {
 }
 
 static bool get_user_verification(void) {
-  char to_party_id[CANTON_PARTY_ID_STR_SIZE_MAX] = {0};
+  canton_txn_display_info_t *display_info =
+      &canton_txn_context->unsigned_txn.txn_display_info;
 
-  strcpy(to_party_id,
-         canton_txn_context->unsigned_txn.txn_user_relevant_info
-             .receiver_party_id);
+  char *sender_party_id = display_info->sender_party_id;
+  char *receiver_party_id = display_info->receiver_party_id;
+  char *amount_string = display_info->amount;
 
   if (use_signature_verification) {
-    if (!exchange_validate_stored_signature(to_party_id, sizeof(to_party_id))) {
+    if (!exchange_validate_stored_signature(receiver_party_id,
+                                            sizeof(receiver_party_id))) {
       return false;
     }
   }
 
+  if (!core_scroll_page(UI_TEXT_TRANSACTION_TYPE,
+                        display_info->transaction_type,
+                        canton_send_error)) {
+    return false;
+  }
+
   if (!core_scroll_page(
-          ui_text_verify_address, to_party_id, canton_send_error)) {
+          UI_TEXT_SENDER_PARTY_ID, sender_party_id, canton_send_error)) {
+    return false;
+  }
+
+  if (!core_scroll_page(
+          UI_TEXT_RECEIVER_PARTY_ID, receiver_party_id, canton_send_error)) {
     return false;
   }
 
   // verify recipient amount
-  uint64_t amount = 0;
-  memcpy(&amount,
-         &canton_txn_context->unsigned_txn.txn_user_relevant_info.amount,
-         sizeof(uint64_t));
-  char amount_string[30] = {'\0'};
-  double decimal_amount = (double)amount;
-  decimal_amount *= 1e-6;
-  snprintf(amount_string, sizeof(amount_string), "%.6f", decimal_amount);
-
   char display[100] = {'\0'};
   snprintf(display,
            sizeof(display),

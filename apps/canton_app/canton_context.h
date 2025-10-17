@@ -67,15 +67,17 @@ typedef struct {
 } canton_txn_node_hash_t;
 
 typedef struct {
+  char transaction_type[20];
+  char sender_party_id[CANTON_PARTY_ID_STR_SIZE_MAX];
   // inside exercise node -> chosen_value -> record -> field(label: "receiver")
   // -> value
   char receiver_party_id[CANTON_PARTY_ID_STR_SIZE_MAX];
   // inside exercise node -> chosen_value -> record -> field(label: "amount")
   // -> value
-  uint64_t amount;
+  char amount[30];
   // TODO: add more fields
 
-} canton_txn_user_relevant_info_t;
+} canton_txn_display_info_t;
 
 typedef struct {
   uint8_t hash[CANTON_INPUT_CONTRACT_HASH_SIZE];
@@ -88,7 +90,7 @@ typedef struct {
   canton_node_seed_t *txn_node_seeds;
   canton_txn_node_hash_t *txn_node_hashes;
   canton_txn_input_contract_hash_t *input_contract_hashes;
-  canton_txn_user_relevant_info_t txn_user_relevant_info;
+  canton_txn_display_info_t txn_display_info;
 } canton_unsigned_txn;
 
 typedef struct {
