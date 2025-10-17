@@ -654,6 +654,7 @@ static bool get_user_verification(void) {
   char *sender_party_id = display_info->sender_party_id;
   char *receiver_party_id = display_info->receiver_party_id;
   char *amount_string = display_info->amount;
+  canton_transaction_type_t txn_type = display_info->txn_type;
 
   if (use_signature_verification) {
     if (!exchange_validate_stored_signature(receiver_party_id,
@@ -662,8 +663,9 @@ static bool get_user_verification(void) {
     }
   }
 
+  // verify transaction type
   char txn_type_text[30] = {'\0'};
-  switch (display_info->txn_type) {
+  switch (txn_type) {
     case CANTON_TXN_TYPE_TAP: {
       strcpy(txn_type_text, TAP_TXN_TYPE_TEXT);
       break;
@@ -699,30 +701,39 @@ static bool get_user_verification(void) {
     return false;
   }
 
-  if (!core_scroll_page(
-          UI_TEXT_SENDER_PARTY_ID, sender_party_id, canton_send_error)) {
-    return false;
+  // verify sender
+  if (txn_type != CANTON_TXN_TYPE_TAP &&
+      txn_type != CANTON_TXN_TYPE_PREAPPROVAL) {
+    if (!core_scroll_page(
+            UI_TEXT_SENDER_PARTY_ID, sender_party_id, canton_send_error)) {
+      return false;
+    }
   }
 
+  // verify receiver
   if (!core_scroll_page(
           UI_TEXT_RECEIVER_PARTY_ID, receiver_party_id, canton_send_error)) {
     return false;
   }
 
-  // verify recipient amount
-  char display[100] = {'\0'};
-  snprintf(display,
-           sizeof(display),
-           UI_TEXT_VERIFY_AMOUNT,
-           amount_string,
-           CANTON_LUNIT);
+  if (txn_type != CANTON_TXN_TYPE_PREAPPROVAL) {
+    // verify recipient amount
+    char display[100] = {'\0'};
+    snprintf(display,
+             sizeof(display),
+             UI_TEXT_VERIFY_AMOUNT,
+             amount_string,
+             CANTON_LUNIT);
 
-  if (!core_confirmation(display, canton_send_error)) {
-    return false;
+    if (!core_confirmation(display, canton_send_error)) {
+      return false;
+    }
   }
 
   // verify expiry
-  if (display_info->start_time != 0 && display_info->expiry_time != 0) {
+  if (txn_type != CANTON_TXN_TYPE_TAP &&
+      txn_type != CANTON_TXN_TYPE_PREAPPROVAL &&
+      display_info->start_time != 0 && display_info->expiry_time != 0) {
     uint64_t diff = display_info->expiry_time - display_info->start_time;
     uint64_t minute_factor = (uint64_t)60 * 60 * 1000000;
     uint64_t mins = diff % minute_factor;
