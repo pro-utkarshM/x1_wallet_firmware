@@ -662,9 +662,40 @@ static bool get_user_verification(void) {
     }
   }
 
-  if (!core_scroll_page(UI_TEXT_TRANSACTION_TYPE,
-                        display_info->transaction_type,
-                        canton_send_error)) {
+  char txn_type_text[30] = {'\0'};
+  switch (display_info->txn_type) {
+    case CANTON_TXN_TYPE_TAP: {
+      strcpy(txn_type_text, TAP_TXN_TYPE_TEXT);
+      break;
+    }
+    case CANTON_TXN_TYPE_TRANSFER: {
+      strcpy(txn_type_text, TRANSFER_TXN_TYPE_TEXT);
+      break;
+    }
+    case CANTON_TXN_TYPE_WITHDRAW: {
+      strcpy(txn_type_text, WITHDRAW_TXN_TYPE_TEXT);
+      break;
+    }
+    case CANTON_TXN_TYPE_ACCEPT: {
+      strcpy(txn_type_text, ACCEPT_TXN_TYPE_TEXT);
+      break;
+    }
+    case CANTON_TXN_TYPE_REJECT: {
+      strcpy(txn_type_text, REJECT_TXN_TYPE_TEXT);
+      break;
+    }
+    case CANTON_TXN_TYPE_PREAPPROVAL: {
+      strcpy(txn_type_text, PREAPPROVAL_TXN_TYPE_TEXT);
+      break;
+    }
+    default: {
+      strcpy(txn_type_text, "Unknown");
+      break;
+    }
+  }
+
+  if (!core_scroll_page(
+          UI_TEXT_TRANSACTION_TYPE, txn_type_text, canton_send_error)) {
     return false;
   }
 

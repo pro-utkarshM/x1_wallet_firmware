@@ -54,6 +54,14 @@
 // TODO: add references to the purpose
 #define CANTON_TOPOLOGY_TXN_HASH_PURPOSE 11
 #define CANTON_MULTI_TOPOLOGY_TXNS_COMBINED_HASH_PURPOSE 55
+
+#define TAP_TXN_TYPE_TEXT "Tap"
+#define TRANSFER_TXN_TYPE_TEXT "Transfer"
+#define WITHDRAW_TXN_TYPE_TEXT "Withdraw"
+#define ACCEPT_TXN_TYPE_TEXT "Accept"
+#define REJECT_TXN_TYPE_TEXT "Reject"
+#define PREAPPROVAL_TXN_TYPE_TEXT "Pre-approval"
+
 /*****************************************************************************
  * TYPEDEFS
  *****************************************************************************/
@@ -66,8 +74,17 @@ typedef struct {
   uint8_t hash[SHA256_DIGEST_LENGTH];
 } canton_txn_node_hash_t;
 
+typedef enum {
+  CANTON_TXN_TYPE_TAP = 0,
+  CANTON_TXN_TYPE_TRANSFER = 1,
+  CANTON_TXN_TYPE_WITHDRAW = 2,
+  CANTON_TXN_TYPE_ACCEPT = 3,
+  CANTON_TXN_TYPE_REJECT = 4,
+  CANTON_TXN_TYPE_PREAPPROVAL = 5,
+} canton_transaction_type_t;
+
 typedef struct {
-  char transaction_type[20];
+  canton_transaction_type_t txn_type;
   char sender_party_id[CANTON_PARTY_ID_STR_SIZE_MAX];
   // inside exercise node -> chosen_value -> record -> field(label: "receiver")
   // -> value

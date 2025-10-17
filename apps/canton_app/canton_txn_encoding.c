@@ -393,10 +393,13 @@ const static uint8_t FETCH_NODE_TAG = 0x02;
 const static uint8_t ROLLBACK_NODE_TAG = 0x03;
 
 const static char *TRANSFER_CHOICE_ID = "TransferFactory_Transfer";
-const static char *TRANSFER_LABEL = "transfer";
 const static char *TAP_CHOICE_ID = "AmuletRules_DevNet_Tap";
-const static char *TAP_LABEL = "tap";
+const static char *WITHDRAW_CHOICE_ID = "TransferInstruction_Withdraw";
+const static char *ACCEPT_CHOICE_ID = "TransferInstruction_Accept";
+const static char *REJECT_CHOICE_ID = "TransferInstruction_Reject";
+const static char *PREAPPROVAL_CHOICE_ID = "TransferPreapprovalProposal";
 const static char *CANTON_TRANSFER_INSTRUCTION = "AmuletTransferInstruction";
+const static char *TRANSFER_LABEL = "transfer";
 const static char *SENDER_LABEL = "sender";
 const static char *RECEIVER_LABEL = "receiver";
 const static char *AMOUNT_LABEL = "amount";
@@ -1710,10 +1713,10 @@ static void parse_display_info(const char *choice_id,
   canton_record_t *record = chosen_value->record;
   // for send, compare choice_id with TransferFactory_Transfer
   if (strcmp(choice_id, TRANSFER_CHOICE_ID) == 0) {
-    strcpy(display_info->transaction_type, TRANSFER_LABEL);
+    display_info->txn_type = CANTON_TXN_TYPE_TRANSFER;
     parse_display_info_from_transfer_record(record, display_info);
   } else if (strcmp(choice_id, TAP_CHOICE_ID) == 0) {
-    strcpy(display_info->transaction_type, TAP_LABEL);
+    display_info->txn_type = CANTON_TXN_TYPE_TAP;
 
     for (size_t i = 0; i < record->fields_count; i++) {
       canton_record_field_t *tap_field = &record->fields[i];
@@ -1743,6 +1746,14 @@ static void parse_display_info(const char *choice_id,
       return;
     }
     parse_display_info_from_transfer_record(record, display_info);
+  } else if (strcmp(choice_id, WITHDRAW_CHOICE_ID) == 0) {
+    display_info->txn_type = CANTON_TXN_TYPE_WITHDRAW;
+  } else if (strcmp(choice_id, ACCEPT_CHOICE_ID) == 0) {
+    display_info->txn_type = CANTON_TXN_TYPE_ACCEPT;
+  } else if (strcmp(choice_id, REJECT_CHOICE_ID) == 0) {
+    display_info->txn_type = CANTON_TXN_TYPE_REJECT;
+  } else if (strcmp(choice_id, PREAPPROVAL_CHOICE_ID) == 0) {
+    display_info->txn_type = CANTON_TXN_TYPE_PREAPPROVAL;
   }
 }
 
