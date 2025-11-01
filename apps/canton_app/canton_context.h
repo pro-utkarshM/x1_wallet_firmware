@@ -86,16 +86,11 @@ typedef enum {
 typedef struct {
   canton_transaction_type_t txn_type;
   char sender_party_id[CANTON_PARTY_ID_STR_SIZE_MAX];
-  // inside exercise node -> chosen_value -> record -> field(label: "receiver")
-  // -> value
   char receiver_party_id[CANTON_PARTY_ID_STR_SIZE_MAX];
-  // inside exercise node -> chosen_value -> record -> field(label: "amount")
-  // -> value
   char amount[30];
   uint64_t start_time;
   uint64_t expiry_time;
-  // TODO: add more fields
-
+  // TODO: add more fields if/when required like memo, instrumentId, fee, etc.
 } canton_txn_display_info_t;
 
 typedef struct {
@@ -103,7 +98,6 @@ typedef struct {
 } canton_txn_input_contract_hash_t;
 
 typedef struct {
-  // TODO: canton fields
   canton_sign_txn_transaction_metadata_t txn_meta;
   canton_sign_txn_canton_metadata_t canton_meta;
   canton_node_seed_t *txn_node_seeds;

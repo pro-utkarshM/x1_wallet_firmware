@@ -647,6 +647,41 @@ static bool fetch_and_encode_valid_unsigned_txn_data(canton_query_t *query) {
          validate_and_encode_canton_unsigned_txn();
 }
 
+static void get_expiry_display(uint64_t expiry_time,
+                               uint64_t start_time,
+                               char *expiry_display) {
+  uint64_t diff = expiry_time - start_time;
+
+  uint64_t days = 0;
+  uint64_t hours = 0;
+  uint64_t mins = 0;
+  uint64_t days_factor = ((uint64_t)24 * 60 * 60 * 1000 * 1000);
+  uint64_t hours_factor = ((uint64_t)60 * 60 * 1000 * 1000);
+  uint64_t mins_factor = ((uint64_t)60 * 1000 * 1000);
+
+  days = diff / days_factor;
+  diff %= days_factor;
+  hours = diff / hours_factor;
+  diff %= hours_factor;
+  mins = diff / mins_factor;
+
+  if (days > 0) {
+    char display[30] = {'\0'};
+    snprintf(display, sizeof(display), UI_TEXT_DAYS, days);
+    strcat(expiry_display, display);
+  }
+  if (hours > 0) {
+    char display[30] = {'\0'};
+    snprintf(display, sizeof(display), UI_TEXT_HOURS, hours);
+    strcat(expiry_display, display);
+  }
+  if (mins > 0) {
+    char display[30] = {'\0'};
+    snprintf(display, sizeof(display), UI_TEXT_MINS, mins);
+    strcat(expiry_display, display);
+  }
+}
+
 static bool get_user_verification(void) {
   canton_txn_display_info_t *display_info =
       &canton_txn_context->unsigned_txn.txn_display_info;
@@ -734,28 +769,11 @@ static bool get_user_verification(void) {
   if (txn_type != CANTON_TXN_TYPE_TAP &&
       txn_type != CANTON_TXN_TYPE_PREAPPROVAL &&
       display_info->start_time != 0 && display_info->expiry_time != 0) {
-    uint64_t diff = display_info->expiry_time - display_info->start_time;
-    uint64_t minute_factor = (uint64_t)60 * 60 * 1000000;
-    uint64_t mins = diff % minute_factor;
-    diff /= minute_factor;
+    char expiry_display[100] = {'\0'};
+    get_expiry_display(
+        display_info->expiry_time, display_info->start_time, expiry_display);
 
-    uint64_t hours = diff % 24;
-    diff /= 24;
-
-    uint64_t days = diff;
-
-    char expiry_display[30] = {'\0'};
-    if (days != 0) {
-      snprintf(expiry_display, sizeof(expiry_display), UI_TEST_DAYS, days);
-    }
-    if (hours != 0) {
-      snprintf(expiry_display, sizeof(expiry_display), UI_TEST_HOURS, hours);
-    }
-    if (mins != 0) {
-      snprintf(expiry_display, sizeof(expiry_display), UI_TEST_MINS, mins);
-    }
-
-    if (!core_scroll_page(UI_TEST_EXPIRY, expiry_display, canton_send_error)) {
+    if (!core_scroll_page(UI_TEXT_EXPIRY, expiry_display, canton_send_error)) {
       return false;
     }
   }
