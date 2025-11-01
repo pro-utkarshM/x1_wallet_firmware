@@ -172,7 +172,7 @@ static bool fetch_valid_input(canton_query_t *query);
  * @return true If the user accepted the transaction display
  * @return false If any user rejection occured or P0 event occured
  */
-static bool get_user_verification(void);
+// static bool get_user_verification(void);
 
 /**
  * @brief Calculates ED25519 curve based signature over the digest of the user
@@ -494,17 +494,17 @@ static bool fetch_valid_input(canton_query_t *query) {
   return true;
 }
 
-static bool get_user_verification(void) {
-  // verify partyId with the user
-  if (!core_scroll_page(
-          UI_TEXT_VERIFY_PARTY_ID,
-          canton_topology_txn_context->unsigned_topology_txn.party_id,
-          canton_send_error)) {
-    return false;
-  }
+// static bool get_user_verification(void) {
+//   // verify partyId with the user
+//   if (!core_scroll_page(
+//           UI_TEXT_VERIFY_PARTY_ID,
+//           canton_topology_txn_context->unsigned_topology_txn.party_id,
+//           canton_send_error)) {
+//     return false;
+//   }
 
-  return true;
-}
+//   return true;
+// }
 
 static bool sign_topology_txn(canton_topology_sig_t *sig) {
   uint8_t seed[64] = {0};
@@ -530,6 +530,19 @@ static bool sign_topology_txn(canton_topology_sig_t *sig) {
       ED25519_NAME,
       seed,
       &hdnode);
+
+  // match public key with the public key in the proposal
+  if (!canton_topology_txn_context->unsigned_topology_txn.has_public_key ||
+      memcmp(canton_topology_txn_context->unsigned_topology_txn.public_key,
+             hdnode.public_key + 1,
+             CANTON_PUB_KEY_SIZE) != 0) {
+    canton_send_error(ERROR_COMMON_ERROR_CORRUPT_DATA_TAG,
+                      ERROR_DATA_FLOW_INVALID_DATA);
+    memzero(&hdnode, sizeof(hdnode));
+    memzero(digest, sizeof(digest));
+    memzero(seed, sizeof(seed));
+    return false;
+  }
 
   ed25519_sign(digest,
                CANTON_HASH_SIZE,
@@ -576,8 +589,7 @@ void canton_sign_topology_transaction(canton_query_t *query) {
   canton_topology_sig_t sig = {0};
 
   if (handle_initiate_query(query) && fetch_valid_input(query) &&
-      get_user_verification() && sign_topology_txn(&sig) &&
-      send_signature(query, &sig)) {
+      sign_topology_txn(&sig) && send_signature(query, &sig)) {
     delay_scr_init(ui_text_check_cysync, DELAY_TIME);
   }
 
