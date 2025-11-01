@@ -75,6 +75,7 @@
 #include "canton_txn_encoding.h"
 #include "coin_utils.h"
 #include "composable_app_queue.h"
+#include "constant_texts.h"
 #include "ed25519.h"
 #include "exchange_main.h"
 #include "reconstruct_wallet_flow.h"
@@ -646,43 +647,135 @@ static bool fetch_and_encode_valid_unsigned_txn_data(canton_query_t *query) {
          validate_and_encode_canton_unsigned_txn();
 }
 
-static bool get_user_verification(void) {
-  char to_party_id[CANTON_PARTY_ID_STR_SIZE_MAX] = {0};
+static void get_expiry_display(uint64_t expiry_time,
+                               uint64_t start_time,
+                               char *expiry_display) {
+  uint64_t diff = expiry_time - start_time;
 
-  strcpy(to_party_id,
-         canton_txn_context->unsigned_txn.txn_user_relevant_info
-             .receiver_party_id);
+  uint64_t days = 0;
+  uint64_t hours = 0;
+  uint64_t mins = 0;
+  uint64_t days_factor = ((uint64_t)24 * 60 * 60 * 1000 * 1000);
+  uint64_t hours_factor = ((uint64_t)60 * 60 * 1000 * 1000);
+  uint64_t mins_factor = ((uint64_t)60 * 1000 * 1000);
+
+  days = diff / days_factor;
+  diff %= days_factor;
+  hours = diff / hours_factor;
+  diff %= hours_factor;
+  mins = diff / mins_factor;
+
+  if (days > 0) {
+    char display[30] = {'\0'};
+    snprintf(display, sizeof(display), UI_TEXT_DAYS, days);
+    strcat(expiry_display, display);
+  }
+  if (hours > 0) {
+    char display[30] = {'\0'};
+    snprintf(display, sizeof(display), UI_TEXT_HOURS, hours);
+    strcat(expiry_display, display);
+  }
+  if (mins > 0) {
+    char display[30] = {'\0'};
+    snprintf(display, sizeof(display), UI_TEXT_MINS, mins);
+    strcat(expiry_display, display);
+  }
+}
+
+static bool get_user_verification(void) {
+  canton_txn_display_info_t *display_info =
+      &canton_txn_context->unsigned_txn.txn_display_info;
+
+  char *sender_party_id = display_info->sender_party_id;
+  char *receiver_party_id = display_info->receiver_party_id;
+  char *amount_string = display_info->amount;
+  canton_transaction_type_t txn_type = display_info->txn_type;
 
   if (use_signature_verification) {
-    if (!exchange_validate_stored_signature(to_party_id, sizeof(to_party_id))) {
+    if (!exchange_validate_stored_signature(receiver_party_id,
+                                            sizeof(receiver_party_id))) {
       return false;
     }
   }
 
+  // verify transaction type
+  char txn_type_text[30] = {'\0'};
+  switch (txn_type) {
+    case CANTON_TXN_TYPE_TAP: {
+      strcpy(txn_type_text, TAP_TXN_TYPE_TEXT);
+      break;
+    }
+    case CANTON_TXN_TYPE_TRANSFER: {
+      strcpy(txn_type_text, TRANSFER_TXN_TYPE_TEXT);
+      break;
+    }
+    case CANTON_TXN_TYPE_WITHDRAW: {
+      strcpy(txn_type_text, WITHDRAW_TXN_TYPE_TEXT);
+      break;
+    }
+    case CANTON_TXN_TYPE_ACCEPT: {
+      strcpy(txn_type_text, ACCEPT_TXN_TYPE_TEXT);
+      break;
+    }
+    case CANTON_TXN_TYPE_REJECT: {
+      strcpy(txn_type_text, REJECT_TXN_TYPE_TEXT);
+      break;
+    }
+    case CANTON_TXN_TYPE_PREAPPROVAL: {
+      strcpy(txn_type_text, PREAPPROVAL_TXN_TYPE_TEXT);
+      break;
+    }
+    default: {
+      strcpy(txn_type_text, "Unknown");
+      break;
+    }
+  }
+
   if (!core_scroll_page(
-          ui_text_verify_address, to_party_id, canton_send_error)) {
+          UI_TEXT_TRANSACTION_TYPE, txn_type_text, canton_send_error)) {
     return false;
   }
 
-  // verify recipient amount
-  uint64_t amount = 0;
-  memcpy(&amount,
-         &canton_txn_context->unsigned_txn.txn_user_relevant_info.amount,
-         sizeof(uint64_t));
-  char amount_string[30] = {'\0'};
-  double decimal_amount = (double)amount;
-  decimal_amount *= 1e-6;
-  snprintf(amount_string, sizeof(amount_string), "%.6f", decimal_amount);
+  // verify sender
+  if (txn_type != CANTON_TXN_TYPE_TAP &&
+      txn_type != CANTON_TXN_TYPE_PREAPPROVAL) {
+    if (!core_scroll_page(
+            UI_TEXT_SENDER_PARTY_ID, sender_party_id, canton_send_error)) {
+      return false;
+    }
+  }
 
-  char display[100] = {'\0'};
-  snprintf(display,
-           sizeof(display),
-           UI_TEXT_VERIFY_AMOUNT,
-           amount_string,
-           CANTON_LUNIT);
-
-  if (!core_confirmation(display, canton_send_error)) {
+  // verify receiver
+  if (!core_scroll_page(
+          UI_TEXT_RECEIVER_PARTY_ID, receiver_party_id, canton_send_error)) {
     return false;
+  }
+
+  if (txn_type != CANTON_TXN_TYPE_PREAPPROVAL) {
+    // verify recipient amount
+    char display[100] = {'\0'};
+    snprintf(display,
+             sizeof(display),
+             UI_TEXT_VERIFY_AMOUNT,
+             amount_string,
+             CANTON_LUNIT);
+
+    if (!core_confirmation(display, canton_send_error)) {
+      return false;
+    }
+  }
+
+  // verify expiry
+  if (txn_type != CANTON_TXN_TYPE_TAP &&
+      txn_type != CANTON_TXN_TYPE_PREAPPROVAL &&
+      display_info->start_time != 0 && display_info->expiry_time != 0) {
+    char expiry_display[100] = {'\0'};
+    get_expiry_display(
+        display_info->expiry_time, display_info->start_time, expiry_display);
+
+    if (!core_scroll_page(UI_TEXT_EXPIRY, expiry_display, canton_send_error)) {
+      return false;
+    }
   }
 
   set_app_flow_status(CANTON_SIGN_TXN_STATUS_VERIFY);

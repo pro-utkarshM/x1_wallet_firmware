@@ -90,9 +90,6 @@
  * PRIVATE MACROS AND DEFINES
  *****************************************************************************/
 
-#define RECEIVER_ADDR_VALUE_RECORD_LABEL "receiver"
-#define AMOUNT_VALUE_RECORD_LABEL "amount"
-
 /*****************************************************************************
  * PRIVATE TYPEDEFS
  *****************************************************************************/
@@ -375,13 +372,13 @@ static uint8_t *encode_metadata(
     size_t *out_len);
 
 /**
- * @brief Parses and stores transaction fields which are found inside exercise
- * node's chosen_value field.
- * For now it parses & stores Amount, Receiver address.
+ * @brief Parses and stores transaction fields which are to be displayed for
+ * user verification For now it parses & stores Amount, Receiver address.
  *
  * @param value[in] Reference to @ref canton_value_t instance
  */
-static bool parse_store_from_exercise_chosen_value(const canton_value_t *value);
+static void parse_display_info(const char *choice_id,
+                               const canton_value_t *chosen_value);
 
 /*****************************************************************************
  * STATIC VARIABLES
@@ -394,6 +391,20 @@ const static uint8_t CREATE_NODE_TAG = 0x00;
 const static uint8_t EXERCISE_NODE_TAG = 0x01;
 const static uint8_t FETCH_NODE_TAG = 0x02;
 const static uint8_t ROLLBACK_NODE_TAG = 0x03;
+
+const static char *TRANSFER_CHOICE_ID = "TransferFactory_Transfer";
+const static char *TAP_CHOICE_ID = "AmuletRules_DevNet_Tap";
+const static char *WITHDRAW_CHOICE_ID = "TransferInstruction_Withdraw";
+const static char *ACCEPT_CHOICE_ID = "TransferInstruction_Accept";
+const static char *REJECT_CHOICE_ID = "TransferInstruction_Reject";
+const static char *PREAPPROVAL_CHOICE_ID = "TransferPreapprovalProposal";
+const static char *CANTON_TRANSFER_INSTRUCTION = "AmuletTransferInstruction";
+const static char *TRANSFER_LABEL = "transfer";
+const static char *SENDER_LABEL = "sender";
+const static char *RECEIVER_LABEL = "receiver";
+const static char *AMOUNT_LABEL = "amount";
+const static char *START_TIME_LABEL = "requestedAt";
+const static char *EXPIRY_TIME_LABEL = "executeBefore";
 
 /*****************************************************************************
  * GLOBAL VARIABLES
@@ -705,7 +716,7 @@ static size_t get_encoded_fetch_node_size(const canton_fetch_t *node,
   total_buf_size += 1;
   if (node->has_interface_id) {
     // interface_id: identifier
-    total_buf_size += get_encoded_identifier_size(&node->template_id);
+    total_buf_size += get_encoded_identifier_size(&node->interface_id);
   }
 
   // acting_parties: 4 bytes: int32
@@ -1079,18 +1090,18 @@ static void encode_value(const canton_value_t *value, uint8_t *buf) {
       *(buf + offset) = 0x00;
       offset += 1;
 
+      size_t tmp = 0;
       if (value->variant->has_variant_id) {
         *(buf + offset - 1) = 0x01;
-        size_t tmp = 0;
         encode_identifier(&value->variant->variant_id, buf + offset, &tmp);
         offset += tmp;
-
-        encode_string(value->variant->constructor, buf + offset, &tmp);
-        offset += tmp;
-
-        encode_value(value->variant->value, buf + offset);
-        get_encoded_value_size(value->variant->value);
       }
+      tmp = 0;
+      encode_string(value->variant->constructor, buf + offset, &tmp);
+      offset += tmp;
+
+      encode_value(value->variant->value, buf + offset);
+      offset += get_encoded_value_size(value->variant->value);
       break;
     }
     case CANTON_VALUE_ENUM_T_TAG: {
@@ -1101,14 +1112,14 @@ static void encode_value(const canton_value_t *value, uint8_t *buf) {
       *(buf + offset) = 0x00;
       offset += 1;
 
-      if (value->variant->has_variant_id) {
-        size_t tmp = 0;
+      size_t tmp = 0;
+      if (value->enum_t.has_enum_id) {
         *(buf + offset - 1) = 0x01;
-        encode_identifier(&value->variant->variant_id, buf + offset, &tmp);
+        encode_identifier(&value->enum_t.enum_id, buf + offset, &tmp);
         offset += tmp;
       }
 
-      size_t tmp = 0;
+      tmp = 0;
       // constructor
       encode_string(value->enum_t.constructor, buf + offset, &tmp);
       break;
@@ -1365,7 +1376,7 @@ static uint8_t *encode_exercise_node(const canton_exercise_t *node,
   // we would want to extract amount, receiver address right before encoding
   // them. They are stored in exersie node's chosen_value field.
 
-  parse_store_from_exercise_chosen_value(node->chosen_value);
+  parse_display_info(node->choice_id, node->chosen_value);
 
   tmp_len = get_encoded_value_size(node->chosen_value);
   encode_value(node->chosen_value, (buf + offset));
@@ -1459,9 +1470,13 @@ static uint8_t *encode_create_node(const canton_create_t *node,
   encode_string(node->package_name, (buf + offset), &tmp_len);
   offset += tmp_len;
 
-  // encode_identifier
-  encode_identifier(&node->template_id, (buf + offset), &tmp_len);
-  offset += tmp_len;
+  if (node->has_template_id) {
+    // encode_identifier
+    encode_identifier(&node->template_id, (buf + offset), &tmp_len);
+    offset += tmp_len;
+
+    parse_display_info(node->template_id.entity_name, node->argument);
+  }
 
   // argument: value
   encode_value(node->argument, buf + offset);
@@ -1621,56 +1636,151 @@ static uint8_t *encode_metadata(
   return buf;
 }
 
-static bool parse_store_from_exercise_chosen_value(
-    const canton_value_t *value) {
-  if (!value) {
-    return false;
+static void parse_display_info_from_transfer_record(
+    const canton_record_t *record,
+    canton_txn_display_info_t *display_info) {
+  if (!record || !display_info) {
+    return;
   }
-
-  if (CANTON_VALUE_RECORD_TAG != value->which_sum) {
-    return false;
-  }
-
-  canton_record_t *record = value->record;
   for (size_t i = 0; i < record->fields_count; i++) {
-    canton_record_field_t *field = &record->fields[i];
-    // make sure value is not null.
-    if (!field->value) {
+    canton_record_field_t *transfer_field = &record->fields[i];
+    canton_value_t *transfer_value = transfer_field->value;
+
+    if (!transfer_value) {
       continue;
     }
 
-    if (0 == strcmp(field->label, RECEIVER_ADDR_VALUE_RECORD_LABEL)) {
-      // when the field contains receiver address.
-      // make sure value is of type party.
-      if (CANTON_VALUE_PARTY_TAG != field->value->which_sum) {
+    if (strcmp(transfer_field->label, TRANSFER_LABEL) == 0) {
+      if (CANTON_VALUE_RECORD_TAG != transfer_value->which_sum) {
         continue;
       }
 
-      // copy party tag
-      strcpy(canton_txn_context->unsigned_txn.txn_user_relevant_info
-                 .receiver_party_id,
-             field->value->party);
+      display_info->start_time = display_info->expiry_time = 0;
 
-    } else if (0 == strcmp(field->label, AMOUNT_VALUE_RECORD_LABEL)) {
-      // when the field contains amount
-      // make sure value is of type numeric.
-      if (CANTON_VALUE_NUMERIC_TAG != field->value->which_sum) {
-        continue;
+      canton_record_t *transfer_record = transfer_value->record;
+      for (size_t j = 0; j < transfer_record->fields_count; j++) {
+        canton_record_field_t *display_field = &transfer_record->fields[j];
+        canton_value_t *display_value = display_field->value;
+
+        if (!display_value) {
+          continue;
+        }
+
+        if (strcmp(display_field->label, SENDER_LABEL) == 0) {
+          if (CANTON_VALUE_PARTY_TAG != display_value->which_sum) {
+            continue;
+          }
+          strcpy(display_info->sender_party_id, display_value->party);
+
+        } else if (strcmp(display_field->label, RECEIVER_LABEL) == 0) {
+          if (CANTON_VALUE_PARTY_TAG != display_value->which_sum) {
+            continue;
+          }
+          strcpy(display_info->receiver_party_id, display_value->party);
+
+        } else if (strcmp(display_field->label, AMOUNT_LABEL) == 0) {
+          if (CANTON_VALUE_NUMERIC_TAG != display_value->which_sum) {
+            continue;
+          }
+          strcpy(display_info->amount, display_value->numeric);
+        } else if (strcmp(display_field->label, START_TIME_LABEL) == 0) {
+          if (CANTON_VALUE_TIMESTAMP_TAG != display_value->which_sum) {
+            continue;
+          }
+          display_info->start_time = display_value->timestamp;
+        } else if (strcmp(display_field->label, EXPIRY_TIME_LABEL) == 0) {
+          if (CANTON_VALUE_TIMESTAMP_TAG != display_value->which_sum) {
+            continue;
+          }
+          display_info->expiry_time = display_value->timestamp;
+        }
+
+        // TODO: Parse other fields as well like instrumentId(maybe to check
+        // the coin/token), meta->memo
       }
-
-      errno = 0;
-      uint64_t amount = strtol(field->value->numeric, NULL, 10);
-
-      // amount parsing failed
-      if (errno == ERANGE) {
-        continue;
-      }
-
-      canton_txn_context->unsigned_txn.txn_user_relevant_info.amount = amount;
     }
   }
+}
 
-  return true;
+static void parse_display_info(const char *choice_id,
+                               const canton_value_t *chosen_value) {
+  if (!choice_id || !chosen_value) {
+    return;
+  }
+
+  if (CANTON_VALUE_RECORD_TAG != chosen_value->which_sum) {
+    return;
+  }
+  canton_txn_display_info_t *display_info =
+      &canton_txn_context->unsigned_txn.txn_display_info;
+
+  canton_record_t *record = chosen_value->record;
+  // for send, compare choice_id with TransferFactory_Transfer
+  if (strcmp(choice_id, TRANSFER_CHOICE_ID) == 0) {
+    display_info->txn_type = CANTON_TXN_TYPE_TRANSFER;
+    parse_display_info_from_transfer_record(record, display_info);
+  } else if (strcmp(choice_id, TAP_CHOICE_ID) == 0) {
+    display_info->txn_type = CANTON_TXN_TYPE_TAP;
+
+    for (size_t i = 0; i < record->fields_count; i++) {
+      canton_record_field_t *tap_field = &record->fields[i];
+      canton_value_t *tap_value = tap_field->value;
+
+      if (!tap_value) {
+        continue;
+      }
+
+      if (strcmp(tap_field->label, RECEIVER_LABEL) == 0) {
+        if (CANTON_VALUE_PARTY_TAG != tap_value->which_sum) {
+          continue;
+        }
+        strcpy(display_info->receiver_party_id, tap_value->party);
+
+      } else if (0 == strcmp(tap_field->label, AMOUNT_LABEL)) {
+        if (CANTON_VALUE_NUMERIC_TAG != tap_value->which_sum) {
+          continue;
+        }
+        strcpy(display_info->amount, tap_value->numeric);
+      }
+    }
+  } else if (strcmp(choice_id, CANTON_TRANSFER_INSTRUCTION) == 0) {
+    // txn is either accept, reject or withdraw
+    if (!record->has_record_id || strcmp(record->record_id.entity_name,
+                                         CANTON_TRANSFER_INSTRUCTION) != 0) {
+      return;
+    }
+    parse_display_info_from_transfer_record(record, display_info);
+  } else if (strcmp(choice_id, WITHDRAW_CHOICE_ID) == 0) {
+    display_info->txn_type = CANTON_TXN_TYPE_WITHDRAW;
+  } else if (strcmp(choice_id, ACCEPT_CHOICE_ID) == 0) {
+    display_info->txn_type = CANTON_TXN_TYPE_ACCEPT;
+  } else if (strcmp(choice_id, REJECT_CHOICE_ID) == 0) {
+    display_info->txn_type = CANTON_TXN_TYPE_REJECT;
+  } else if (strcmp(choice_id, PREAPPROVAL_CHOICE_ID) == 0) {
+    if (!record->has_record_id ||
+        strcmp(record->record_id.entity_name, PREAPPROVAL_CHOICE_ID) != 0) {
+      return;
+    }
+    display_info->txn_type = CANTON_TXN_TYPE_PREAPPROVAL;
+
+    for (size_t i = 0; i < record->fields_count; i++) {
+      canton_record_field_t *preapproval_field = &record->fields[i];
+      canton_value_t *preapproval_value = preapproval_field->value;
+
+      if (!preapproval_value) {
+        continue;
+      }
+
+      if (strcmp(preapproval_field->label, RECEIVER_LABEL) == 0) {
+        if (CANTON_VALUE_PARTY_TAG != preapproval_value->which_sum) {
+          continue;
+        }
+        strcpy(display_info->receiver_party_id, preapproval_value->party);
+      }
+
+      // TODO: parse other fields if required. ex 'provider'
+    }
+  }
 }
 
 static int compare_hashes(const void *a, const void *b) {

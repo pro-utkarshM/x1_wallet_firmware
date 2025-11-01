@@ -54,6 +54,14 @@
 // TODO: add references to the purpose
 #define CANTON_TOPOLOGY_TXN_HASH_PURPOSE 11
 #define CANTON_MULTI_TOPOLOGY_TXNS_COMBINED_HASH_PURPOSE 55
+
+#define TAP_TXN_TYPE_TEXT "Tap"
+#define TRANSFER_TXN_TYPE_TEXT "Transfer"
+#define WITHDRAW_TXN_TYPE_TEXT "Withdraw"
+#define ACCEPT_TXN_TYPE_TEXT "Accept"
+#define REJECT_TXN_TYPE_TEXT "Reject"
+#define PREAPPROVAL_TXN_TYPE_TEXT "Pre-approval"
+
 /*****************************************************************************
  * TYPEDEFS
  *****************************************************************************/
@@ -62,33 +70,40 @@ typedef struct {
 } canton_config_t;
 
 typedef struct {
-  char node_id;
+  int32_t node_id;
   uint8_t hash[SHA256_DIGEST_LENGTH];
 } canton_txn_node_hash_t;
 
-typedef struct {
-  // inside exercise node -> chosen_value -> record -> field(label: "receiver")
-  // -> value
-  char receiver_party_id[CANTON_PARTY_ID_STR_SIZE_MAX];
-  // inside exercise node -> chosen_value -> record -> field(label: "amount")
-  // -> value
-  uint64_t amount;
-  // TODO: add more fields
+typedef enum {
+  CANTON_TXN_TYPE_TAP = 0,
+  CANTON_TXN_TYPE_TRANSFER = 1,
+  CANTON_TXN_TYPE_WITHDRAW = 2,
+  CANTON_TXN_TYPE_ACCEPT = 3,
+  CANTON_TXN_TYPE_REJECT = 4,
+  CANTON_TXN_TYPE_PREAPPROVAL = 5,
+} canton_transaction_type_t;
 
-} canton_txn_user_relevant_info_t;
+typedef struct {
+  canton_transaction_type_t txn_type;
+  char sender_party_id[CANTON_PARTY_ID_STR_SIZE_MAX];
+  char receiver_party_id[CANTON_PARTY_ID_STR_SIZE_MAX];
+  char amount[30];
+  uint64_t start_time;
+  uint64_t expiry_time;
+  // TODO: add more fields if/when required like memo, instrumentId, fee, etc.
+} canton_txn_display_info_t;
 
 typedef struct {
   uint8_t hash[CANTON_INPUT_CONTRACT_HASH_SIZE];
 } canton_txn_input_contract_hash_t;
 
 typedef struct {
-  // TODO: canton fields
   canton_sign_txn_transaction_metadata_t txn_meta;
   canton_sign_txn_canton_metadata_t canton_meta;
   canton_node_seed_t *txn_node_seeds;
   canton_txn_node_hash_t *txn_node_hashes;
   canton_txn_input_contract_hash_t *input_contract_hashes;
-  canton_txn_user_relevant_info_t txn_user_relevant_info;
+  canton_txn_display_info_t txn_display_info;
 } canton_unsigned_txn;
 
 typedef struct {
