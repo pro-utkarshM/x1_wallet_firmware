@@ -155,10 +155,6 @@ message StoreId {
   }
 }
 
-message TopologyMappingWrapper {
-  TopologyMapping mapping = 1;
-}
-
 message GenerateTransactionRequestProposal {
   /** Replace / Remove */
   TopologyChangeOp operation = 1;
