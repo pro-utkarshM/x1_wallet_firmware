@@ -297,6 +297,11 @@ static bool validate_and_store_party_txn_proposal(
       case CANTON_TOPOLOGY_MAPPING_NAMESPACE_DELEGATION_TAG: {
         canton_namespace_delegation_t namespace_delegation =
             proposal->mapping.namespace_delegation;
+        if (namespace_delegation.which_restriction != CANTON_NAMESPACE_DELEGATION_CAN_SIGN_ALL_MAPPINGS_TAG) {
+          canton_send_error(ERROR_COMMON_ERROR_CORRUPT_DATA_TAG,
+                            ERROR_DATA_FLOW_INVALID_DATA);
+          return false;
+        }
         if (!namespace_delegation.has_target_key) {
           canton_send_error(ERROR_COMMON_ERROR_CORRUPT_DATA_TAG,
                             ERROR_DATA_FLOW_INVALID_DATA);
@@ -369,7 +374,13 @@ static bool validate_and_store_party_txn_proposal(
           return false;
         }
 
-        // TODO: validate the participant id, permission and onboarding
+        if (party_to_participant.participants[0].permission != CANTON_PARTICIPANT_PERMISSION_CONFIRMATION) {
+          canton_send_error(ERROR_COMMON_ERROR_CORRUPT_DATA_TAG,
+                            ERROR_DATA_FLOW_INVALID_DATA);
+          return false;
+        }
+
+        // TODO: validate the participant id
         break;
       }
 
