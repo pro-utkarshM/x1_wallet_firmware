@@ -217,8 +217,8 @@ static size_t get_encoded_identifier_size(const canton_identifier_t *ident);
  *
  * @returns Computed size of fetch node
  */
-static size_t get_encoded_fetch_node_size(const canton_fetch_t *node,
-                                          int32_t node_id);
+// static size_t get_encoded_fetch_node_size(const canton_fetch_t *node,
+//                                           int32_t node_id);
 
 /**
  * @brief Computes canton exercise node size
@@ -228,8 +228,8 @@ static size_t get_encoded_fetch_node_size(const canton_fetch_t *node,
  *
  * @returns Computed size of exercise node
  */
-static size_t get_encoded_exercise_node_size(const canton_exercise_t *node,
-                                             int32_t node_id);
+// static size_t get_encoded_exercise_node_size(const canton_exercise_t *node,
+//                                              int32_t node_id);
 
 /**
  * @brief Computes canton create node size
@@ -250,8 +250,8 @@ static size_t get_encoded_create_node_size(const canton_create_t *node,
  *
  * @returns Computed size of rollback node
  */
-static size_t get_encoded_rollback_node_size(const canton_rollback_t *node,
-                                             int32_t node_id);
+// static size_t get_encoded_rollback_node_size(const canton_rollback_t *node,
+//                                              int32_t node_id);
 
 /**
  * @brief Computes canton metadata size
@@ -291,9 +291,9 @@ static void encode_identifier(const canton_identifier_t *ident,
  *
  * @returns Heap allocated buffer with node encoded
  */
-static uint8_t *encode_fetch_node(const canton_fetch_t *node,
-                                  int32_t node_id,
-                                  size_t *out_len);
+// static uint8_t *encode_fetch_node(const canton_fetch_t *node,
+//                                   int32_t node_id,
+//                                   size_t *out_len);
 
 /**
  * @brief Encodes @ref canton_exercise_t to a new buffer
@@ -304,9 +304,9 @@ static uint8_t *encode_fetch_node(const canton_fetch_t *node,
  *
  * @returns Heap allocated buffer with node encoded
  */
-static uint8_t *encode_exercise_node(const canton_exercise_t *node,
-                                     int32_t node_id,
-                                     size_t *out_len);
+// static uint8_t *encode_exercise_node(const canton_exercise_t *node,
+//                                      int32_t node_id,
+//                                      size_t *out_len);
 
 /**
  * @brief Encodes @ref canton_create_t to a new buffer
@@ -330,9 +330,9 @@ static uint8_t *encode_create_node(const canton_create_t *node,
  *
  * @returns Heap allocated buffer with node encoded
  */
-static uint8_t *encode_rollback_node(const canton_rollback_t *node,
-                                     int32_t node_id,
-                                     size_t *out_len);
+// static uint8_t *encode_rollback_node(const canton_rollback_t *node,
+//                                      int32_t node_id,
+//                                      size_t *out_len);
 
 /**
  * @brief Encodes generic node v1 @ref canton_node_t to a new buffer
@@ -388,23 +388,23 @@ const static uint32_t PREPARED_TRANSACTION_HASH_PURPOSE = 0x30000000;
 const static uint8_t HASHING_SCHEME_VERSION_V2 = 0x02;
 const static uint8_t NODE_ENCODING_VERSION = 0x01;
 const static uint8_t CREATE_NODE_TAG = 0x00;
-const static uint8_t EXERCISE_NODE_TAG = 0x01;
-const static uint8_t FETCH_NODE_TAG = 0x02;
-const static uint8_t ROLLBACK_NODE_TAG = 0x03;
+// const static uint8_t EXERCISE_NODE_TAG = 0x01;
+// const static uint8_t FETCH_NODE_TAG = 0x02;
+// const static uint8_t ROLLBACK_NODE_TAG = 0x03;
 
-const static char *TRANSFER_CHOICE_ID = "TransferFactory_Transfer";
-const static char *TAP_CHOICE_ID = "AmuletRules_DevNet_Tap";
-const static char *WITHDRAW_CHOICE_ID = "TransferInstruction_Withdraw";
-const static char *ACCEPT_CHOICE_ID = "TransferInstruction_Accept";
-const static char *REJECT_CHOICE_ID = "TransferInstruction_Reject";
+// const static char *TRANSFER_CHOICE_ID = "TransferFactory_Transfer";
+// const static char *TAP_CHOICE_ID = "AmuletRules_DevNet_Tap";
+// const static char *WITHDRAW_CHOICE_ID = "TransferInstruction_Withdraw";
+// const static char *ACCEPT_CHOICE_ID = "TransferInstruction_Accept";
+// const static char *REJECT_CHOICE_ID = "TransferInstruction_Reject";
 const static char *PREAPPROVAL_CHOICE_ID = "TransferPreapprovalProposal";
-const static char *CANTON_TRANSFER_INSTRUCTION = "AmuletTransferInstruction";
-const static char *TRANSFER_LABEL = "transfer";
-const static char *SENDER_LABEL = "sender";
+// const static char *CANTON_TRANSFER_INSTRUCTION = "AmuletTransferInstruction";
+// const static char *TRANSFER_LABEL = "transfer";
+// const static char *SENDER_LABEL = "sender";
 const static char *RECEIVER_LABEL = "receiver";
-const static char *AMOUNT_LABEL = "amount";
-const static char *START_TIME_LABEL = "requestedAt";
-const static char *EXPIRY_TIME_LABEL = "executeBefore";
+// const static char *AMOUNT_LABEL = "amount";
+// const static char *START_TIME_LABEL = "requestedAt";
+// const static char *EXPIRY_TIME_LABEL = "executeBefore";
 
 /*****************************************************************************
  * GLOBAL VARIABLES
@@ -672,164 +672,164 @@ size_t get_encoded_identifier_size(const canton_identifier_t *ident) {
   return total_size;
 }
 
-static size_t get_encoded_fetch_node_size(const canton_fetch_t *node,
-                                          int32_t node_id) {
-  size_t total_buf_size = 0;
+// static size_t get_encoded_fetch_node_size(const canton_fetch_t *node,
+//                                           int32_t node_id) {
+//   size_t total_buf_size = 0;
 
-  // NODE_ENCODING_VERSION: 1 byte
-  total_buf_size += 1;
+//   // NODE_ENCODING_VERSION: 1 byte
+//   total_buf_size += 1;
 
-  // lf_version: 4 + strlen() : string
-  total_buf_size += 4 + strlen(node->lf_version);
+//   // lf_version: 4 + strlen() : string
+//   total_buf_size += 4 + strlen(node->lf_version);
 
-  // fetch node tag ; 1 byte: 0x02
-  total_buf_size += 1;
+//   // fetch node tag ; 1 byte: 0x02
+//   total_buf_size += 1;
 
-  // contract_id: 4 + strlen()/2 : hex string
-  total_buf_size += 4 + (int)strlen(node->contract_id) / 2;
+//   // contract_id: 4 + strlen()/2 : hex string
+//   total_buf_size += 4 + (int)strlen(node->contract_id) / 2;
 
-  // package_name: 4 + strlen() : string
-  total_buf_size += 4 + strlen(node->package_name);
+//   // package_name: 4 + strlen() : string
+//   total_buf_size += 4 + strlen(node->package_name);
 
-  // template_id: get_encoded_identifier_size
-  total_buf_size += get_encoded_identifier_size(&node->template_id);
+//   // template_id: get_encoded_identifier_size
+//   total_buf_size += get_encoded_identifier_size(&node->template_id);
 
-  // signatories_count: 4 bytes : int32
-  total_buf_size += 4;
+//   // signatories_count: 4 bytes : int32
+//   total_buf_size += 4;
 
-  // signatories: strings
-  for (size_t i = 0; i < node->signatories_count; i++) {
-    // 4 + strlen() : strings
-    total_buf_size += 4 + strlen(node->signatories[i]);
-  }
+//   // signatories: strings
+//   for (size_t i = 0; i < node->signatories_count; i++) {
+//     // 4 + strlen() : strings
+//     total_buf_size += 4 + strlen(node->signatories[i]);
+//   }
 
-  // stakeholders: 4 bytes : int32
-  total_buf_size += 4;
+//   // stakeholders: 4 bytes : int32
+//   total_buf_size += 4;
 
-  // stakeholders: strings
-  for (size_t i = 0; i < node->stakeholders_count; i++) {
-    // 4 + strlen() : strings
-    total_buf_size += 4 + strlen(node->stakeholders[i]);
-  }
+//   // stakeholders: strings
+//   for (size_t i = 0; i < node->stakeholders_count; i++) {
+//     // 4 + strlen() : strings
+//     total_buf_size += 4 + strlen(node->stakeholders[i]);
+//   }
 
-  // interface_id: `optional` flag
-  total_buf_size += 1;
-  if (node->has_interface_id) {
-    // interface_id: identifier
-    total_buf_size += get_encoded_identifier_size(&node->interface_id);
-  }
+//   // interface_id: `optional` flag
+//   total_buf_size += 1;
+//   if (node->has_interface_id) {
+//     // interface_id: identifier
+//     total_buf_size += get_encoded_identifier_size(&node->interface_id);
+//   }
 
-  // acting_parties: 4 bytes: int32
-  total_buf_size += 4;
+//   // acting_parties: 4 bytes: int32
+//   total_buf_size += 4;
 
-  // acting_parties: strings
-  for (size_t i = 0; i < node->acting_parties_count; i++) {
-    // 4 + strlen() : strings
-    total_buf_size += 4 + strlen(node->acting_parties[i]);
-  }
+//   // acting_parties: strings
+//   for (size_t i = 0; i < node->acting_parties_count; i++) {
+//     // 4 + strlen() : strings
+//     total_buf_size += 4 + strlen(node->acting_parties[i]);
+//   }
 
-  return total_buf_size;
-}
+//   return total_buf_size;
+// }
 
-static size_t get_encoded_exercise_node_size(const canton_exercise_t *node,
-                                             int32_t node_id) {
-  size_t total_buf_size = 0;
+// static size_t get_encoded_exercise_node_size(const canton_exercise_t *node,
+//                                              int32_t node_id) {
+//   size_t total_buf_size = 0;
 
-  // NODE_ENCODING_VERSION: 1 byte
-  total_buf_size += 1;
+//   // NODE_ENCODING_VERSION: 1 byte
+//   total_buf_size += 1;
 
-  // lf_version: 4 + strlen() : string
-  total_buf_size += 4 + strlen(node->lf_version);
+//   // lf_version: 4 + strlen() : string
+//   total_buf_size += 4 + strlen(node->lf_version);
 
-  // create node tag ; 1 byte: 0x01
-  total_buf_size += 1;
+//   // create node tag ; 1 byte: 0x01
+//   total_buf_size += 1;
 
-  // hash of seed
-  const canton_node_seed_t *seed = get_node_seed_from_node_id(node_id);
-  if (seed == NULL) {
-    return -1;
-  }
-  total_buf_size += seed->seed.size;
+//   // hash of seed
+//   const canton_node_seed_t *seed = get_node_seed_from_node_id(node_id);
+//   if (seed == NULL) {
+//     return -1;
+//   }
+//   total_buf_size += seed->seed.size;
 
-  // contract_id: 4 + strlen()/2 : hex string
-  total_buf_size += 4 + (int32_t)strlen(node->contract_id) / 2;
+//   // contract_id: 4 + strlen()/2 : hex string
+//   total_buf_size += 4 + (int32_t)strlen(node->contract_id) / 2;
 
-  // package_name: 4 + strlen() : string
-  total_buf_size += 4 + strlen(node->package_name);
+//   // package_name: 4 + strlen() : string
+//   total_buf_size += 4 + strlen(node->package_name);
 
-  // template_id: get_encoded_identifier_size
-  total_buf_size += get_encoded_identifier_size(&node->template_id);
+//   // template_id: get_encoded_identifier_size
+//   total_buf_size += get_encoded_identifier_size(&node->template_id);
 
-  // signatories_count: 4 bytes : int32
-  total_buf_size += 4;
+//   // signatories_count: 4 bytes : int32
+//   total_buf_size += 4;
 
-  // signatories: strings
-  for (size_t i = 0; i < node->signatories_count; i++) {
-    // 4 + strlen() : strings
-    total_buf_size += 4 + strlen(node->signatories[i]);
-  }
+//   // signatories: strings
+//   for (size_t i = 0; i < node->signatories_count; i++) {
+//     // 4 + strlen() : strings
+//     total_buf_size += 4 + strlen(node->signatories[i]);
+//   }
 
-  // stakeholders: 4 bytes : int32
-  total_buf_size += 4;
+//   // stakeholders: 4 bytes : int32
+//   total_buf_size += 4;
 
-  // stakeholders: strings
-  for (size_t i = 0; i < node->stakeholders_count; i++) {
-    // 4 + strlen() : strings
-    total_buf_size += 4 + strlen(node->stakeholders[i]);
-  }
+//   // stakeholders: strings
+//   for (size_t i = 0; i < node->stakeholders_count; i++) {
+//     // 4 + strlen() : strings
+//     total_buf_size += 4 + strlen(node->stakeholders[i]);
+//   }
 
-  // acting_parties: 4 bytes: int32
-  total_buf_size += 4;
+//   // acting_parties: 4 bytes: int32
+//   total_buf_size += 4;
 
-  // acting_parties: strings
-  for (size_t i = 0; i < node->acting_parties_count; i++) {
-    // 4 + strlen() : strings
-    total_buf_size += 4 + strlen(node->acting_parties[i]);
-  }
+//   // acting_parties: strings
+//   for (size_t i = 0; i < node->acting_parties_count; i++) {
+//     // 4 + strlen() : strings
+//     total_buf_size += 4 + strlen(node->acting_parties[i]);
+//   }
 
-  // interface_id: `optional` flag
-  total_buf_size += 1;
-  if (node->has_interface_id) {
-    // interface_id: identifier
-    total_buf_size += get_encoded_identifier_size(&node->interface_id);
-  }
+//   // interface_id: `optional` flag
+//   total_buf_size += 1;
+//   if (node->has_interface_id) {
+//     // interface_id: identifier
+//     total_buf_size += get_encoded_identifier_size(&node->interface_id);
+//   }
 
-  // 4 + strlen() : strings
-  total_buf_size += 4 + strlen(node->choice_id);
+//   // 4 + strlen() : strings
+//   total_buf_size += 4 + strlen(node->choice_id);
 
-  //  chosen_value: Value type
-  total_buf_size += get_encoded_value_size(node->chosen_value);
+//   //  chosen_value: Value type
+//   total_buf_size += get_encoded_value_size(node->chosen_value);
 
-  // consuming: 1 : bool
-  total_buf_size += 1;
+//   // consuming: 1 : bool
+//   total_buf_size += 1;
 
-  // exercise_result : `optional` flag
-  total_buf_size += 1;
-  //  if (node->has_exercise_result) {
-  if (NULL != node->exercise_result) {
-    // exercise_result: Value
-    total_buf_size += get_encoded_value_size(node->exercise_result);
-  }
+//   // exercise_result : `optional` flag
+//   total_buf_size += 1;
+//   //  if (node->has_exercise_result) {
+//   if (NULL != node->exercise_result) {
+//     // exercise_result: Value
+//     total_buf_size += get_encoded_value_size(node->exercise_result);
+//   }
 
-  // choice_observers_count: int32
-  total_buf_size += 4;
+//   // choice_observers_count: int32
+//   total_buf_size += 4;
 
-  // choice_observers: strings
-  for (size_t i = 0; i < node->choice_observers_count; i++) {
-    // 4 + strlen() : strings
-    total_buf_size += 4 + strlen(node->choice_observers[i]);
-  }
+//   // choice_observers: strings
+//   for (size_t i = 0; i < node->choice_observers_count; i++) {
+//     // 4 + strlen() : strings
+//     total_buf_size += 4 + strlen(node->choice_observers[i]);
+//   }
 
-  // children_count: int32
-  total_buf_size += 4;
+//   // children_count: int32
+//   total_buf_size += 4;
 
-  // chidren: sha256 hash of encoded nodes with children ids
-  for (size_t i = 0; i < node->children_count; i++) {
-    // hash: 32 bytes
-    total_buf_size += SHA256_DIGEST_LENGTH;
-  }
-  return total_buf_size;
-}
+//   // chidren: sha256 hash of encoded nodes with children ids
+//   for (size_t i = 0; i < node->children_count; i++) {
+//     // hash: 32 bytes
+//     total_buf_size += SHA256_DIGEST_LENGTH;
+//   }
+//   return total_buf_size;
+// }
 
 static size_t get_encoded_create_node_size(const canton_create_t *node,
                                            int32_t node_id) {
@@ -884,26 +884,26 @@ static size_t get_encoded_create_node_size(const canton_create_t *node,
   return total_buf_size;
 }
 
-static size_t get_encoded_rollback_node_size(const canton_rollback_t *node,
-                                             int32_t node_id) {
-  size_t total_buf_size = 0;
+// static size_t get_encoded_rollback_node_size(const canton_rollback_t *node,
+//                                              int32_t node_id) {
+//   size_t total_buf_size = 0;
 
-  // NODE_ENCODING_VERSION: 1 byte
-  total_buf_size += 1;
+//   // NODE_ENCODING_VERSION: 1 byte
+//   total_buf_size += 1;
 
-  // create node tag ; 1 byte: 0x03
-  total_buf_size += 1;
+//   // create node tag ; 1 byte: 0x03
+//   total_buf_size += 1;
 
-  // children_count: int32
-  total_buf_size += 4;
+//   // children_count: int32
+//   total_buf_size += 4;
 
-  // chidren: sha256 hash of encoded nodes with children ids
-  for (size_t i = 0; i < node->children_count; i++) {
-    // hash: 32 bytes
-    total_buf_size += SHA256_DIGEST_LENGTH;
-  }
-  return total_buf_size;
-}
+//   // chidren: sha256 hash of encoded nodes with children ids
+//   for (size_t i = 0; i < node->children_count; i++) {
+//     // hash: 32 bytes
+//     total_buf_size += SHA256_DIGEST_LENGTH;
+//   }
+//   return total_buf_size;
+// }
 
 static size_t get_encoded_metadata_size(
     const canton_sign_txn_canton_metadata_t *metadata) {
@@ -1213,221 +1213,221 @@ static void encode_identifier(const canton_identifier_t *ident,
   free(entity_copy);
 }
 
-static uint8_t *encode_fetch_node(const canton_fetch_t *node,
-                                  int32_t node_id,
-                                  size_t *out_len) {
-  *out_len = get_encoded_fetch_node_size(node, node_id);
-  uint8_t *buf = (uint8_t *)malloc(*out_len);
-  size_t offset = 0;
-  size_t tmp_len = 0;
+// static uint8_t *encode_fetch_node(const canton_fetch_t *node,
+//                                   int32_t node_id,
+//                                   size_t *out_len) {
+//   *out_len = get_encoded_fetch_node_size(node, node_id);
+//   uint8_t *buf = (uint8_t *)malloc(*out_len);
+//   size_t offset = 0;
+//   size_t tmp_len = 0;
 
-  // NODE_ENCODING_VERSION: 1 byte
-  *(buf + offset) = NODE_ENCODING_VERSION;
-  offset += 1;
+//   // NODE_ENCODING_VERSION: 1 byte
+//   *(buf + offset) = NODE_ENCODING_VERSION;
+//   offset += 1;
 
-  // lf_version: 4 + strlen() : string
-  encode_string(node->lf_version, buf + offset, &tmp_len);
-  offset += tmp_len;
+//   // lf_version: 4 + strlen() : string
+//   encode_string(node->lf_version, buf + offset, &tmp_len);
+//   offset += tmp_len;
 
-  // fetch node tag ; 1 byte: 0x02
-  *(buf + offset) = FETCH_NODE_TAG;
-  offset += 1;
+//   // fetch node tag ; 1 byte: 0x02
+//   *(buf + offset) = FETCH_NODE_TAG;
+//   offset += 1;
 
-  // contract_id: 4 + strlen()/2 : hex string
-  encode_hex_string(node->contract_id, (buf + offset), &tmp_len);
-  offset += tmp_len;
+//   // contract_id: 4 + strlen()/2 : hex string
+//   encode_hex_string(node->contract_id, (buf + offset), &tmp_len);
+//   offset += tmp_len;
 
-  // package_name: 4 + strlen() : string
-  encode_string(node->package_name, (buf + offset), &tmp_len);
-  offset += tmp_len;
+//   // package_name: 4 + strlen() : string
+//   encode_string(node->package_name, (buf + offset), &tmp_len);
+//   offset += tmp_len;
 
-  // template_id: identifier
-  encode_identifier(&node->template_id, (buf + offset), &tmp_len);
-  offset += tmp_len;
+//   // template_id: identifier
+//   encode_identifier(&node->template_id, (buf + offset), &tmp_len);
+//   offset += tmp_len;
 
-  // signatories_count: 4 bytes : int32
-  encode_int32(node->signatories_count, (buf + offset));
-  offset += 4;
+//   // signatories_count: 4 bytes : int32
+//   encode_int32(node->signatories_count, (buf + offset));
+//   offset += 4;
 
-  // signatories: strings
-  for (size_t i = 0; i < node->signatories_count; i++) {
-    encode_string(node->signatories[i], (buf + offset), &tmp_len);
-    offset += tmp_len;
-  }
+//   // signatories: strings
+//   for (size_t i = 0; i < node->signatories_count; i++) {
+//     encode_string(node->signatories[i], (buf + offset), &tmp_len);
+//     offset += tmp_len;
+//   }
 
-  // stakeholders_count: 4 bytes : int32
-  encode_int32(node->stakeholders_count, (buf + offset));
-  offset += 4;
+//   // stakeholders_count: 4 bytes : int32
+//   encode_int32(node->stakeholders_count, (buf + offset));
+//   offset += 4;
 
-  // stakeholders: strings
-  for (size_t i = 0; i < node->stakeholders_count; i++) {
-    encode_string(node->stakeholders[i], (buf + offset), &tmp_len);
-    offset += tmp_len;
-  }
+//   // stakeholders: strings
+//   for (size_t i = 0; i < node->stakeholders_count; i++) {
+//     encode_string(node->stakeholders[i], (buf + offset), &tmp_len);
+//     offset += tmp_len;
+//   }
 
-  // interface_id: `optional` flag
-  *(buf + offset) = 0x00;
-  offset += 1;
-  if (node->has_interface_id) {
-    *(buf + offset - 1) = 0x01;
-    encode_identifier(&node->interface_id, (buf + offset), &tmp_len);
-    offset += tmp_len;
-  }
+//   // interface_id: `optional` flag
+//   *(buf + offset) = 0x00;
+//   offset += 1;
+//   if (node->has_interface_id) {
+//     *(buf + offset - 1) = 0x01;
+//     encode_identifier(&node->interface_id, (buf + offset), &tmp_len);
+//     offset += tmp_len;
+//   }
 
-  // acting_parties_count: 4 bytes : int32
-  encode_int32(node->acting_parties_count, (buf + offset));
-  offset += 4;
+//   // acting_parties_count: 4 bytes : int32
+//   encode_int32(node->acting_parties_count, (buf + offset));
+//   offset += 4;
 
-  // acting_parties : strings
-  for (size_t i = 0; i < node->acting_parties_count; i++) {
-    encode_string(node->acting_parties[i], (buf + offset), &tmp_len);
-    offset += tmp_len;
-  }
+//   // acting_parties : strings
+//   for (size_t i = 0; i < node->acting_parties_count; i++) {
+//     encode_string(node->acting_parties[i], (buf + offset), &tmp_len);
+//     offset += tmp_len;
+//   }
 
-  return buf;
-}
+//   return buf;
+// }
 
-static uint8_t *encode_exercise_node(const canton_exercise_t *node,
-                                     int32_t node_id,
-                                     size_t *out_len) {
-  *out_len = get_encoded_exercise_node_size(node, node_id);
-  uint8_t *buf = (uint8_t *)malloc(*out_len);
-  size_t offset = 0;
-  size_t tmp_len = 0;
+// static uint8_t *encode_exercise_node(const canton_exercise_t *node,
+//                                      int32_t node_id,
+//                                      size_t *out_len) {
+//   *out_len = get_encoded_exercise_node_size(node, node_id);
+//   uint8_t *buf = (uint8_t *)malloc(*out_len);
+//   size_t offset = 0;
+//   size_t tmp_len = 0;
 
-  // NODE_ENCODING_VERSION: 1 byte
-  *(buf + offset) = NODE_ENCODING_VERSION;
-  offset += 1;
+//   // NODE_ENCODING_VERSION: 1 byte
+//   *(buf + offset) = NODE_ENCODING_VERSION;
+//   offset += 1;
 
-  // lf_version: 4 + strlen() : string
-  encode_string(node->lf_version, buf + offset, &tmp_len);
-  offset += tmp_len;
+//   // lf_version: 4 + strlen() : string
+//   encode_string(node->lf_version, buf + offset, &tmp_len);
+//   offset += tmp_len;
 
-  // exercise node tag ; 1 byte: 0x01
-  *(buf + offset) = EXERCISE_NODE_TAG;
-  offset += 1;
+//   // exercise node tag ; 1 byte: 0x01
+//   *(buf + offset) = EXERCISE_NODE_TAG;
+//   offset += 1;
 
-  // hash of seed with this node id
-  const canton_node_seed_t *seed = get_node_seed_from_node_id(node_id);
-  if (NULL == seed) {
-    free(buf);
-    return NULL;
-  }
-  encode_hash(seed->seed.bytes, seed->seed.size, buf + offset);
-  offset += seed->seed.size;
+//   // hash of seed with this node id
+//   const canton_node_seed_t *seed = get_node_seed_from_node_id(node_id);
+//   if (NULL == seed) {
+//     free(buf);
+//     return NULL;
+//   }
+//   encode_hash(seed->seed.bytes, seed->seed.size, buf + offset);
+//   offset += seed->seed.size;
 
-  // contract_id: 4 + strlen()/2 : hex string
-  encode_hex_string(node->contract_id, (buf + offset), &tmp_len);
-  offset += tmp_len;
+//   // contract_id: 4 + strlen()/2 : hex string
+//   encode_hex_string(node->contract_id, (buf + offset), &tmp_len);
+//   offset += tmp_len;
 
-  // package_name: 4 + strlen() : string
-  encode_string(node->package_name, (buf + offset), &tmp_len);
-  offset += tmp_len;
+//   // package_name: 4 + strlen() : string
+//   encode_string(node->package_name, (buf + offset), &tmp_len);
+//   offset += tmp_len;
 
-  // encode_identifier
-  encode_identifier(&node->template_id, (buf + offset), &tmp_len);
-  offset += tmp_len;
+//   // encode_identifier
+//   encode_identifier(&node->template_id, (buf + offset), &tmp_len);
+//   offset += tmp_len;
 
-  // signatories_count: 4 bytes : int32
-  encode_int32(node->signatories_count, (buf + offset));
-  offset += 4;
+//   // signatories_count: 4 bytes : int32
+//   encode_int32(node->signatories_count, (buf + offset));
+//   offset += 4;
 
-  // signatories: strings
-  for (size_t i = 0; i < node->signatories_count; i++) {
-    encode_string(node->signatories[i], (buf + offset), &tmp_len);
-    offset += tmp_len;
-  }
+//   // signatories: strings
+//   for (size_t i = 0; i < node->signatories_count; i++) {
+//     encode_string(node->signatories[i], (buf + offset), &tmp_len);
+//     offset += tmp_len;
+//   }
 
-  // stakeholders_count: 4 bytes : int32
-  encode_int32(node->stakeholders_count, (buf + offset));
-  offset += 4;
+//   // stakeholders_count: 4 bytes : int32
+//   encode_int32(node->stakeholders_count, (buf + offset));
+//   offset += 4;
 
-  // stakeholders: strings
-  for (size_t i = 0; i < node->stakeholders_count; i++) {
-    encode_string(node->stakeholders[i], (buf + offset), &tmp_len);
-    offset += tmp_len;
-  }
+//   // stakeholders: strings
+//   for (size_t i = 0; i < node->stakeholders_count; i++) {
+//     encode_string(node->stakeholders[i], (buf + offset), &tmp_len);
+//     offset += tmp_len;
+//   }
 
-  // acting_parties_count: 4 bytes : int32
-  encode_int32(node->acting_parties_count, (buf + offset));
-  offset += 4;
+//   // acting_parties_count: 4 bytes : int32
+//   encode_int32(node->acting_parties_count, (buf + offset));
+//   offset += 4;
 
-  // acting_parties : strings
-  for (size_t i = 0; i < node->acting_parties_count; i++) {
-    encode_string(node->acting_parties[i], (buf + offset), &tmp_len);
-    offset += tmp_len;
-  }
+//   // acting_parties : strings
+//   for (size_t i = 0; i < node->acting_parties_count; i++) {
+//     encode_string(node->acting_parties[i], (buf + offset), &tmp_len);
+//     offset += tmp_len;
+//   }
 
-  // interface_id: `optional` flag
-  *(buf + offset) = 0x00;
-  offset += 1;
-  if (node->has_interface_id) {
-    *(buf + offset - 1) = 0x01;
-    encode_identifier(&node->interface_id, (buf + offset), &tmp_len);
-    offset += tmp_len;
-  }
+//   // interface_id: `optional` flag
+//   *(buf + offset) = 0x00;
+//   offset += 1;
+//   if (node->has_interface_id) {
+//     *(buf + offset - 1) = 0x01;
+//     encode_identifier(&node->interface_id, (buf + offset), &tmp_len);
+//     offset += tmp_len;
+//   }
 
-  // choice_id: 4 + strlen() : strings
-  encode_string(node->choice_id, (buf + offset), &tmp_len);
-  offset += tmp_len;
+//   // choice_id: 4 + strlen() : strings
+//   encode_string(node->choice_id, (buf + offset), &tmp_len);
+//   offset += tmp_len;
 
-  // chosen_value: Value type
-  //
-  // we would want to extract amount, receiver address right before encoding
-  // them. They are stored in exersie node's chosen_value field.
+//   // chosen_value: Value type
+//   //
+//   // we would want to extract amount, receiver address right before encoding
+//   // them. They are stored in exersie node's chosen_value field.
 
-  parse_display_info(node->choice_id, node->chosen_value);
+//   parse_display_info(node->choice_id, node->chosen_value);
 
-  tmp_len = get_encoded_value_size(node->chosen_value);
-  encode_value(node->chosen_value, (buf + offset));
-  offset += tmp_len;
+//   tmp_len = get_encoded_value_size(node->chosen_value);
+//   encode_value(node->chosen_value, (buf + offset));
+//   offset += tmp_len;
 
-  // consuming: 1 : bool
-  encode_bool(node->consuming, buf + offset);
-  offset += 1;
+//   // consuming: 1 : bool
+//   encode_bool(node->consuming, buf + offset);
+//   offset += 1;
 
-  // exercise_result : `optional` flag
-  *(buf + offset) = 0x00;
-  offset += 1;
-  if (NULL != node->exercise_result) {
-    *(buf + offset - 1) = 0x01;
-    // exercise_result: Value
-    tmp_len = get_encoded_value_size(node->exercise_result);
-    encode_value(node->exercise_result, (buf + offset));
-    offset += tmp_len;
-  }
+//   // exercise_result : `optional` flag
+//   *(buf + offset) = 0x00;
+//   offset += 1;
+//   if (NULL != node->exercise_result) {
+//     *(buf + offset - 1) = 0x01;
+//     // exercise_result: Value
+//     tmp_len = get_encoded_value_size(node->exercise_result);
+//     encode_value(node->exercise_result, (buf + offset));
+//     offset += tmp_len;
+//   }
 
-  // choice_observers_count: int32
-  encode_int32(node->choice_observers_count, buf + offset);
-  offset += 4;
+//   // choice_observers_count: int32
+//   encode_int32(node->choice_observers_count, buf + offset);
+//   offset += 4;
 
-  // choice_observers: strings
-  for (size_t i = 0; i < node->choice_observers_count; i++) {
-    // 4 + strlen() : strings
-    encode_string(node->choice_observers[i], buf + offset, &tmp_len);
-    offset += tmp_len;
-  }
+//   // choice_observers: strings
+//   for (size_t i = 0; i < node->choice_observers_count; i++) {
+//     // 4 + strlen() : strings
+//     encode_string(node->choice_observers[i], buf + offset, &tmp_len);
+//     offset += tmp_len;
+//   }
 
-  // children_count: int32
-  encode_int32(node->children_count, buf + offset);
-  offset += 4;
+//   // children_count: int32
+//   encode_int32(node->children_count, buf + offset);
+//   offset += 4;
 
-  // chidren: sha256 hash of encoded nodes with children ids
-  for (size_t i = 0; i < node->children_count; i++) {
-    // hash: 32 bytes
-    int32_t node_id = strtol(node->children[i], NULL, 10);
-    const canton_txn_node_hash_t *node =
-        get_hashed_encoded_node_from_id(node_id);
+//   // chidren: sha256 hash of encoded nodes with children ids
+//   for (size_t i = 0; i < node->children_count; i++) {
+//     // hash: 32 bytes
+//     int32_t node_id = strtol(node->children[i], NULL, 10);
+//     const canton_txn_node_hash_t *node =
+//         get_hashed_encoded_node_from_id(node_id);
 
-    if (NULL == node) {
-      free(buf);
-      return NULL;
-    }
-    encode_hash(node->hash, SHA256_DIGEST_LENGTH, buf + offset);
-    offset += SHA256_DIGEST_LENGTH;
-  }
-  return buf;
-}
+//     if (NULL == node) {
+//       free(buf);
+//       return NULL;
+//     }
+//     encode_hash(node->hash, SHA256_DIGEST_LENGTH, buf + offset);
+//     offset += SHA256_DIGEST_LENGTH;
+//   }
+//   return buf;
+// }
 
 static uint8_t *encode_create_node(const canton_create_t *node,
                                    int32_t node_id,
@@ -1505,44 +1505,44 @@ static uint8_t *encode_create_node(const canton_create_t *node,
   return buf;
 }
 
-static uint8_t *encode_rollback_node(const canton_rollback_t *node,
-                                     int32_t node_id,
-                                     size_t *out_len) {
-  *out_len = get_encoded_rollback_node_size(node, node_id);
+// static uint8_t *encode_rollback_node(const canton_rollback_t *node,
+//                                      int32_t node_id,
+//                                      size_t *out_len) {
+//   *out_len = get_encoded_rollback_node_size(node, node_id);
 
-  uint8_t *buf = (uint8_t *)malloc(*out_len);
-  size_t offset = 0;
+//   uint8_t *buf = (uint8_t *)malloc(*out_len);
+//   size_t offset = 0;
 
-  // NODE_ENCODING_VERSION: 1 byte
-  *(buf + offset) = NODE_ENCODING_VERSION;
-  offset += 1;
+//   // NODE_ENCODING_VERSION: 1 byte
+//   *(buf + offset) = NODE_ENCODING_VERSION;
+//   offset += 1;
 
-  // rollback node tag ; 1 byte: 0x03
-  *(buf + offset) = ROLLBACK_NODE_TAG;
-  offset += 1;
+//   // rollback node tag ; 1 byte: 0x03
+//   *(buf + offset) = ROLLBACK_NODE_TAG;
+//   offset += 1;
 
-  // children_count: int32
-  encode_int32(node->children_count, buf + offset);
-  offset += 4;
+//   // children_count: int32
+//   encode_int32(node->children_count, buf + offset);
+//   offset += 4;
 
-  // chidren: sha256 hash of encoded nodes with children ids
-  for (size_t i = 0; i < node->children_count; i++) {
-    // hash: 32 bytes
-    int32_t node_id = strtol(node->children[i], NULL, 10);
-    const canton_txn_node_hash_t *node =
-        get_hashed_encoded_node_from_id(node_id);
+//   // chidren: sha256 hash of encoded nodes with children ids
+//   for (size_t i = 0; i < node->children_count; i++) {
+//     // hash: 32 bytes
+//     int32_t node_id = strtol(node->children[i], NULL, 10);
+//     const canton_txn_node_hash_t *node =
+//         get_hashed_encoded_node_from_id(node_id);
 
-    if (NULL == node) {
-      free(buf);
-      return NULL;
-    }
+//     if (NULL == node) {
+//       free(buf);
+//       return NULL;
+//     }
 
-    encode_hash(node->hash, SHA256_DIGEST_LENGTH, buf + offset);
-    offset += SHA256_DIGEST_LENGTH;
-  }
+//     encode_hash(node->hash, SHA256_DIGEST_LENGTH, buf + offset);
+//     offset += SHA256_DIGEST_LENGTH;
+//   }
 
-  return buf;
-}
+//   return buf;
+// }
 
 static uint8_t *encode_node_v1(const canton_node_t *node,
                                char *node_id,
@@ -1638,71 +1638,71 @@ static uint8_t *encode_metadata(
   return buf;
 }
 
-static void parse_display_info_from_transfer_record(
-    const canton_record_t *record,
-    canton_txn_display_info_t *display_info) {
-  if (!record || !display_info) {
-    return;
-  }
-  for (size_t i = 0; i < record->fields_count; i++) {
-    canton_record_field_t *transfer_field = &record->fields[i];
-    canton_value_t *transfer_value = transfer_field->value;
+// static void parse_display_info_from_transfer_record(
+//     const canton_record_t *record,
+//     canton_txn_display_info_t *display_info) {
+//   if (!record || !display_info) {
+//     return;
+//   }
+//   for (size_t i = 0; i < record->fields_count; i++) {
+//     canton_record_field_t *transfer_field = &record->fields[i];
+//     canton_value_t *transfer_value = transfer_field->value;
 
-    if (!transfer_value) {
-      continue;
-    }
+//     if (!transfer_value) {
+//       continue;
+//     }
 
-    if (strcmp(transfer_field->label, TRANSFER_LABEL) == 0) {
-      if (CANTON_VALUE_RECORD_TAG != transfer_value->which_sum) {
-        continue;
-      }
+//     if (strcmp(transfer_field->label, TRANSFER_LABEL) == 0) {
+//       if (CANTON_VALUE_RECORD_TAG != transfer_value->which_sum) {
+//         continue;
+//       }
 
-      display_info->start_time = display_info->expiry_time = 0;
+//       display_info->start_time = display_info->expiry_time = 0;
 
-      canton_record_t *transfer_record = transfer_value->record;
-      for (size_t j = 0; j < transfer_record->fields_count; j++) {
-        canton_record_field_t *display_field = &transfer_record->fields[j];
-        canton_value_t *display_value = display_field->value;
+//       canton_record_t *transfer_record = transfer_value->record;
+//       for (size_t j = 0; j < transfer_record->fields_count; j++) {
+//         canton_record_field_t *display_field = &transfer_record->fields[j];
+//         canton_value_t *display_value = display_field->value;
 
-        if (!display_value) {
-          continue;
-        }
+//         if (!display_value) {
+//           continue;
+//         }
 
-        if (strcmp(display_field->label, SENDER_LABEL) == 0) {
-          if (CANTON_VALUE_PARTY_TAG != display_value->which_sum) {
-            continue;
-          }
-          strcpy(display_info->sender_party_id, display_value->party);
+//         if (strcmp(display_field->label, SENDER_LABEL) == 0) {
+//           if (CANTON_VALUE_PARTY_TAG != display_value->which_sum) {
+//             continue;
+//           }
+//           strcpy(display_info->sender_party_id, display_value->party);
 
-        } else if (strcmp(display_field->label, RECEIVER_LABEL) == 0) {
-          if (CANTON_VALUE_PARTY_TAG != display_value->which_sum) {
-            continue;
-          }
-          strcpy(display_info->receiver_party_id, display_value->party);
+//         } else if (strcmp(display_field->label, RECEIVER_LABEL) == 0) {
+//           if (CANTON_VALUE_PARTY_TAG != display_value->which_sum) {
+//             continue;
+//           }
+//           strcpy(display_info->receiver_party_id, display_value->party);
 
-        } else if (strcmp(display_field->label, AMOUNT_LABEL) == 0) {
-          if (CANTON_VALUE_NUMERIC_TAG != display_value->which_sum) {
-            continue;
-          }
-          strcpy(display_info->amount, display_value->numeric);
-        } else if (strcmp(display_field->label, START_TIME_LABEL) == 0) {
-          if (CANTON_VALUE_TIMESTAMP_TAG != display_value->which_sum) {
-            continue;
-          }
-          display_info->start_time = display_value->timestamp;
-        } else if (strcmp(display_field->label, EXPIRY_TIME_LABEL) == 0) {
-          if (CANTON_VALUE_TIMESTAMP_TAG != display_value->which_sum) {
-            continue;
-          }
-          display_info->expiry_time = display_value->timestamp;
-        }
+//         } else if (strcmp(display_field->label, AMOUNT_LABEL) == 0) {
+//           if (CANTON_VALUE_NUMERIC_TAG != display_value->which_sum) {
+//             continue;
+//           }
+//           strcpy(display_info->amount, display_value->numeric);
+//         } else if (strcmp(display_field->label, START_TIME_LABEL) == 0) {
+//           if (CANTON_VALUE_TIMESTAMP_TAG != display_value->which_sum) {
+//             continue;
+//           }
+//           display_info->start_time = display_value->timestamp;
+//         } else if (strcmp(display_field->label, EXPIRY_TIME_LABEL) == 0) {
+//           if (CANTON_VALUE_TIMESTAMP_TAG != display_value->which_sum) {
+//             continue;
+//           }
+//           display_info->expiry_time = display_value->timestamp;
+//         }
 
-        // TODO: Parse other fields as well like instrumentId(maybe to check
-        // the coin/token), meta->memo
-      }
-    }
-  }
-}
+//         // TODO: Parse other fields as well like instrumentId(maybe to check
+//         // the coin/token), meta->memo
+//       }
+//     }
+//   }
+// }
 
 static void parse_display_info(const char *choice_id,
                                const canton_value_t *chosen_value) {
