@@ -538,6 +538,14 @@ static bool fetch_canton_meta(canton_query_t *query) {
   uint32_t input_contracts_count =
       canton_txn_context->unsigned_txn.canton_meta.input_contracts_count;
 
+  // Allowing transfer pre-approval transactions only for now
+  // transfer pre-approval txns don't have any input contracts
+  if (input_contracts_count != 0) {
+    canton_send_error(ERROR_COMMON_ERROR_CORRUPT_DATA_TAG,
+                      ERROR_DATA_FLOW_INVALID_DATA);
+    return false;
+  }
+
   // we now know the number of input contracts
   // allocate memory for input contracts in
   // canton_txn_context
