@@ -382,6 +382,14 @@ static bool fetch_transaction_meta(canton_query_t *query) {
   uint32_t node_seeds_count = query->sign_txn.txn_meta.node_seeds_count;
   uint32_t nodes_count = query->sign_txn.txn_meta.nodes_count;
 
+  // Allowing transfer pre-approval transactions only for now
+  // transfer pre-approval txns contain only one node seed and one node
+  if (node_seeds_count != 1 || nodes_count != 1) {
+    canton_send_error(ERROR_COMMON_ERROR_CORRUPT_DATA_TAG,
+                      ERROR_DATA_FLOW_INVALID_DATA);
+    return false;
+  }
+
   // we now know the number of node seeds and nodes
   // allocate memory for node seeds and node hashes in canton_txn_context
   canton_txn_context->unsigned_txn.txn_node_seeds =
@@ -529,6 +537,14 @@ static bool fetch_canton_meta(canton_query_t *query) {
 
   uint32_t input_contracts_count =
       canton_txn_context->unsigned_txn.canton_meta.input_contracts_count;
+
+  // Allowing transfer pre-approval transactions only for now
+  // transfer pre-approval txns don't have any input contracts
+  if (input_contracts_count != 0) {
+    canton_send_error(ERROR_COMMON_ERROR_CORRUPT_DATA_TAG,
+                      ERROR_DATA_FLOW_INVALID_DATA);
+    return false;
+  }
 
   // we now know the number of input contracts
   // allocate memory for input contracts in
@@ -690,6 +706,14 @@ static bool get_user_verification(void) {
   char *receiver_party_id = display_info->receiver_party_id;
   char *amount_string = display_info->amount;
   canton_transaction_type_t txn_type = display_info->txn_type;
+
+  // Allowing transfer pre-approval transactions only for now
+  // Don't verify if any other transaction type is present
+  if (txn_type != CANTON_TXN_TYPE_PREAPPROVAL) {
+    canton_send_error(ERROR_COMMON_ERROR_CORRUPT_DATA_TAG,
+                      ERROR_DATA_FLOW_INVALID_DATA);
+    return false;
+  }
 
   if (use_signature_verification) {
     if (!exchange_validate_stored_signature(receiver_party_id,
