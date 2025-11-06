@@ -1553,15 +1553,17 @@ static uint8_t *encode_node_v1(const canton_node_t *node,
     case CANTON_NODE_CREATE_TAG: {
       return encode_create_node(&node->create, node_id_l, out_len);
     }
-    case CANTON_NODE_FETCH_TAG: {
-      return encode_fetch_node(&node->fetch, node_id_l, out_len);
-    }
-    case CANTON_NODE_EXERCISE_TAG: {
-      return encode_exercise_node(&node->exercise, node_id_l, out_len);
-    }
-    case CANTON_NODE_ROLLBACK_TAG: {
-      return encode_rollback_node(&node->rollback, node_id_l, out_len);
-    }
+    // Allowing transfer pre-approval transactions only for now
+    // transfer pre-approval txns has only one single create node
+    // case CANTON_NODE_FETCH_TAG: {
+    //   return encode_fetch_node(&node->fetch, node_id_l, out_len);
+    // }
+    // case CANTON_NODE_EXERCISE_TAG: {
+    //   return encode_exercise_node(&node->exercise, node_id_l, out_len);
+    // }
+    // case CANTON_NODE_ROLLBACK_TAG: {
+    //   return encode_rollback_node(&node->rollback, node_id_l, out_len);
+    // }
     default:
       return NULL;
   }
@@ -1716,47 +1718,50 @@ static void parse_display_info(const char *choice_id,
 
   canton_record_t *record = chosen_value->record;
   // for send, compare choice_id with TransferFactory_Transfer
-  if (strcmp(choice_id, TRANSFER_CHOICE_ID) == 0) {
-    display_info->txn_type = CANTON_TXN_TYPE_TRANSFER;
-    parse_display_info_from_transfer_record(record, display_info);
-  } else if (strcmp(choice_id, TAP_CHOICE_ID) == 0) {
-    display_info->txn_type = CANTON_TXN_TYPE_TAP;
+  // if (strcmp(choice_id, TRANSFER_CHOICE_ID) == 0) {
+  //   display_info->txn_type = CANTON_TXN_TYPE_TRANSFER;
+  //   parse_display_info_from_transfer_record(record, display_info);
+  // } else if (strcmp(choice_id, TAP_CHOICE_ID) == 0) {
+  //   display_info->txn_type = CANTON_TXN_TYPE_TAP;
 
-    for (size_t i = 0; i < record->fields_count; i++) {
-      canton_record_field_t *tap_field = &record->fields[i];
-      canton_value_t *tap_value = tap_field->value;
+  //   for (size_t i = 0; i < record->fields_count; i++) {
+  //     canton_record_field_t *tap_field = &record->fields[i];
+  //     canton_value_t *tap_value = tap_field->value;
 
-      if (!tap_value) {
-        continue;
-      }
+  //     if (!tap_value) {
+  //       continue;
+  //     }
 
-      if (strcmp(tap_field->label, RECEIVER_LABEL) == 0) {
-        if (CANTON_VALUE_PARTY_TAG != tap_value->which_sum) {
-          continue;
-        }
-        strcpy(display_info->receiver_party_id, tap_value->party);
+  //     if (strcmp(tap_field->label, RECEIVER_LABEL) == 0) {
+  //       if (CANTON_VALUE_PARTY_TAG != tap_value->which_sum) {
+  //         continue;
+  //       }
+  //       strcpy(display_info->receiver_party_id, tap_value->party);
 
-      } else if (0 == strcmp(tap_field->label, AMOUNT_LABEL)) {
-        if (CANTON_VALUE_NUMERIC_TAG != tap_value->which_sum) {
-          continue;
-        }
-        strcpy(display_info->amount, tap_value->numeric);
-      }
-    }
-  } else if (strcmp(choice_id, CANTON_TRANSFER_INSTRUCTION) == 0) {
-    // txn is either accept, reject or withdraw
-    if (!record->has_record_id || strcmp(record->record_id.entity_name,
-                                         CANTON_TRANSFER_INSTRUCTION) != 0) {
-      return;
-    }
-    parse_display_info_from_transfer_record(record, display_info);
-  } else if (strcmp(choice_id, WITHDRAW_CHOICE_ID) == 0) {
-    display_info->txn_type = CANTON_TXN_TYPE_WITHDRAW;
-  } else if (strcmp(choice_id, ACCEPT_CHOICE_ID) == 0) {
-    display_info->txn_type = CANTON_TXN_TYPE_ACCEPT;
-  } else if (strcmp(choice_id, REJECT_CHOICE_ID) == 0) {
-    display_info->txn_type = CANTON_TXN_TYPE_REJECT;
-  } else if (strcmp(choice_id, PREAPPROVAL_CHOICE_ID) == 0) {
+  //     } else if (0 == strcmp(tap_field->label, AMOUNT_LABEL)) {
+  //       if (CANTON_VALUE_NUMERIC_TAG != tap_value->which_sum) {
+  //         continue;
+  //       }
+  //       strcpy(display_info->amount, tap_value->numeric);
+  //     }
+  //   }
+  // } else if (strcmp(choice_id, CANTON_TRANSFER_INSTRUCTION) == 0) {
+  //   // txn is either accept, reject or withdraw
+  //   if (!record->has_record_id || strcmp(record->record_id.entity_name,
+  //                                        CANTON_TRANSFER_INSTRUCTION) != 0) {
+  //     return;
+  //   }
+  //   parse_display_info_from_transfer_record(record, display_info);
+  // } else if (strcmp(choice_id, WITHDRAW_CHOICE_ID) == 0) {
+  //   display_info->txn_type = CANTON_TXN_TYPE_WITHDRAW;
+  // } else if (strcmp(choice_id, ACCEPT_CHOICE_ID) == 0) {
+  //   display_info->txn_type = CANTON_TXN_TYPE_ACCEPT;
+  // } else if (strcmp(choice_id, REJECT_CHOICE_ID) == 0) {
+  //   display_info->txn_type = CANTON_TXN_TYPE_REJECT;
+  // } else
+  // Allowing transfer pre-approval transactions only for now
+  // Hence parsing only the pre-approval choice id
+  if (strcmp(choice_id, PREAPPROVAL_CHOICE_ID) == 0) {
     if (!record->has_record_id ||
         strcmp(record->record_id.entity_name, PREAPPROVAL_CHOICE_ID) != 0) {
       return;
