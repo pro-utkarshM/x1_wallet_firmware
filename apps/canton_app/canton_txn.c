@@ -707,6 +707,14 @@ static bool get_user_verification(void) {
   char *amount_string = display_info->amount;
   canton_transaction_type_t txn_type = display_info->txn_type;
 
+  // Allowing transfer pre-approval transactions only for now
+  // Don't verify if any other transaction type is present
+  if (txn_type != CANTON_TXN_TYPE_PREAPPROVAL) {
+    canton_send_error(ERROR_COMMON_ERROR_CORRUPT_DATA_TAG,
+                      ERROR_DATA_FLOW_INVALID_DATA);
+    return false;
+  }
+
   if (use_signature_verification) {
     if (!exchange_validate_stored_signature(receiver_party_id,
                                             sizeof(receiver_party_id))) {
