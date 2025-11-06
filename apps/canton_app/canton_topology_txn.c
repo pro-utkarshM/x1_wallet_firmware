@@ -162,19 +162,6 @@ static bool handle_initiate_query(const canton_query_t *query);
 static bool fetch_valid_input(canton_query_t *query);
 
 /**
- * @brief This function executes user verification flow of the unsigned txn
- * received from the host.
- * @details The user verification flow is different for different type of action
- * types identified from the unsigned txn
- * @note This function expected that the unsigned txn is parsed using the helper
- * function as only few action types are supported currently.
- *
- * @return true If the user accepted the transaction display
- * @return false If any user rejection occured or P0 event occured
- */
-// static bool get_user_verification(void);
-
-/**
  * @brief Calculates ED25519 curve based signature over the digest of the user
  * verified unsigned txn.
  * @details Seed reconstruction takes place within this function
@@ -297,7 +284,8 @@ static bool validate_and_store_party_txn_proposal(
       case CANTON_TOPOLOGY_MAPPING_NAMESPACE_DELEGATION_TAG: {
         canton_namespace_delegation_t namespace_delegation =
             proposal->mapping.namespace_delegation;
-        if (namespace_delegation.which_restriction != CANTON_NAMESPACE_DELEGATION_CAN_SIGN_ALL_MAPPINGS_TAG) {
+        if (namespace_delegation.which_restriction !=
+            CANTON_NAMESPACE_DELEGATION_CAN_SIGN_ALL_MAPPINGS_TAG) {
           canton_send_error(ERROR_COMMON_ERROR_CORRUPT_DATA_TAG,
                             ERROR_DATA_FLOW_INVALID_DATA);
           return false;
@@ -374,7 +362,8 @@ static bool validate_and_store_party_txn_proposal(
           return false;
         }
 
-        if (party_to_participant.participants[0].permission != CANTON_PARTICIPANT_PERMISSION_CONFIRMATION) {
+        if (party_to_participant.participants[0].permission !=
+            CANTON_PARTICIPANT_PERMISSION_CONFIRMATION) {
           canton_send_error(ERROR_COMMON_ERROR_CORRUPT_DATA_TAG,
                             ERROR_DATA_FLOW_INVALID_DATA);
           return false;
@@ -504,18 +493,6 @@ static bool fetch_valid_input(canton_query_t *query) {
 
   return true;
 }
-
-// static bool get_user_verification(void) {
-//   // verify partyId with the user
-//   if (!core_scroll_page(
-//           UI_TEXT_VERIFY_PARTY_ID,
-//           canton_topology_txn_context->unsigned_topology_txn.party_id,
-//           canton_send_error)) {
-//     return false;
-//   }
-
-//   return true;
-// }
 
 static bool sign_topology_txn(canton_topology_sig_t *sig) {
   uint8_t seed[64] = {0};
