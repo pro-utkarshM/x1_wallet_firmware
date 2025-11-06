@@ -382,6 +382,14 @@ static bool fetch_transaction_meta(canton_query_t *query) {
   uint32_t node_seeds_count = query->sign_txn.txn_meta.node_seeds_count;
   uint32_t nodes_count = query->sign_txn.txn_meta.nodes_count;
 
+  // Allowing transfer pre-approval transactions only for now
+  // transfer pre-approval txns contain only one node seed and one node
+  if (node_seeds_count != 1 || nodes_count != 1) {
+    canton_send_error(ERROR_COMMON_ERROR_CORRUPT_DATA_TAG,
+                      ERROR_DATA_FLOW_INVALID_DATA);
+    return false;
+  }
+
   // we now know the number of node seeds and nodes
   // allocate memory for node seeds and node hashes in canton_txn_context
   canton_txn_context->unsigned_txn.txn_node_seeds =
