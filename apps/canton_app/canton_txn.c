@@ -760,6 +760,10 @@ static bool get_user_verification(void) {
     return false;
   }
 
+  if (txn_type == CANTON_TXN_TYPE_PREAPPROVAL) {
+    return true;
+  }
+
   // verify sender
   if (txn_type != CANTON_TXN_TYPE_TAP &&
       txn_type != CANTON_TXN_TYPE_PREAPPROVAL) {
@@ -807,6 +811,15 @@ static bool get_user_verification(void) {
   return true;
 }
 
+static bool verify_party_id(uint8_t *public_key, char *party_id) {
+  char derived_party_id[CANTON_PARTY_ID_SIZE] = {0};
+  get_party_id(public_key, derived_party_id);
+  if (strcmp(derived_party_id, party_id) != 0) {
+    return false;
+  }
+  return true;
+}
+
 static bool sign_txn(canton_sig_t *sig) {
   uint8_t seed[64] = {0};
   if (!reconstruct_seed(
@@ -827,6 +840,22 @@ static bool sign_txn(canton_sig_t *sig) {
                           ED25519_NAME,
                           seed,
                           &hdnode);
+
+  // match partyId(derivied from public key) with the partyId in the transfer
+  // pre-approval transaction
+  canton_txn_display_info_t *display_info =
+      &canton_txn_context->unsigned_txn.txn_display_info;
+  if (display_info->txn_type == CANTON_TXN_TYPE_PREAPPROVAL) {
+    if (!verify_party_id(hdnode.public_key + 1,
+                         display_info->receiver_party_id)) {
+      canton_send_error(ERROR_COMMON_ERROR_CORRUPT_DATA_TAG,
+                        ERROR_DATA_FLOW_INVALID_DATA);
+      memzero(digest, sizeof(digest));
+      memzero(seed, sizeof(seed));
+      memzero(&hdnode, sizeof(hdnode));
+      return false;
+    }
+  }
 
   ed25519_sign(digest,
                SHA256_DIGEST_LENGTH,

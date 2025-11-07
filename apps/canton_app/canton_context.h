@@ -60,7 +60,7 @@
 #define WITHDRAW_TXN_TYPE_TEXT "Withdraw"
 #define ACCEPT_TXN_TYPE_TEXT "Accept"
 #define REJECT_TXN_TYPE_TEXT "Reject"
-#define PREAPPROVAL_TXN_TYPE_TEXT "Pre-approval"
+#define PREAPPROVAL_TXN_TYPE_TEXT "Enable Transfer Pre-approval"
 
 /*****************************************************************************
  * TYPEDEFS
