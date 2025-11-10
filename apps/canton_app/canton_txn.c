@@ -713,7 +713,7 @@ static bool get_user_verification(void) {
   }
 
   // verify transaction type
-  char txn_type_text[30] = {'\0'};
+  char txn_type_text[50] = {'\0'};
   switch (txn_type) {
     case CANTON_TXN_TYPE_TAP: {
       strcpy(txn_type_text, TAP_TXN_TYPE_TEXT);
@@ -739,6 +739,10 @@ static bool get_user_verification(void) {
       strcpy(txn_type_text, PREAPPROVAL_TXN_TYPE_TEXT);
       break;
     }
+    case CANTON_TXN_TYPE_MERGE_DELEGATION_PROPOSAL: {
+      strcpy(txn_type_text, MERGE_DELEGATION_PROPOSAL_TXN_TYPE_TEXT);
+      break;
+    }
     default: {
       strcpy(txn_type_text, "Unknown");
       break;
@@ -750,13 +754,15 @@ static bool get_user_verification(void) {
     return false;
   }
 
-  if (txn_type == CANTON_TXN_TYPE_PREAPPROVAL) {
+  if (txn_type == CANTON_TXN_TYPE_PREAPPROVAL ||
+      txn_type == CANTON_TXN_TYPE_MERGE_DELEGATION_PROPOSAL) {
     return true;
   }
 
   // verify sender
   if (txn_type != CANTON_TXN_TYPE_TAP &&
-      txn_type != CANTON_TXN_TYPE_PREAPPROVAL) {
+      txn_type != CANTON_TXN_TYPE_PREAPPROVAL &&
+      txn_type != CANTON_TXN_TYPE_MERGE_DELEGATION_PROPOSAL) {
     if (!core_scroll_page(
             UI_TEXT_SENDER_PARTY_ID, sender_party_id, canton_send_error)) {
       return false;
@@ -769,7 +775,8 @@ static bool get_user_verification(void) {
     return false;
   }
 
-  if (txn_type != CANTON_TXN_TYPE_PREAPPROVAL) {
+  if (txn_type != CANTON_TXN_TYPE_PREAPPROVAL &&
+      txn_type != CANTON_TXN_TYPE_MERGE_DELEGATION_PROPOSAL) {
     // verify recipient amount
     char display[100] = {'\0'};
     snprintf(display,
@@ -835,9 +842,12 @@ static bool sign_txn(canton_sig_t *sig) {
   // pre-approval transaction
   canton_txn_display_info_t *display_info =
       &canton_txn_context->unsigned_txn.txn_display_info;
-  if (display_info->txn_type == CANTON_TXN_TYPE_PREAPPROVAL) {
+  if (display_info->txn_type == CANTON_TXN_TYPE_PREAPPROVAL ||
+      display_info->txn_type == CANTON_TXN_TYPE_MERGE_DELEGATION_PROPOSAL) {
     if (!verify_party_id(hdnode.public_key + 1,
-                         display_info->receiver_party_id)) {
+                         display_info->txn_type == CANTON_TXN_TYPE_PREAPPROVAL
+                             ? display_info->receiver_party_id
+                             : display_info->owner_party_id)) {
       canton_send_error(ERROR_COMMON_ERROR_CORRUPT_DATA_TAG,
                         ERROR_DATA_FLOW_INVALID_DATA);
       memzero(digest, sizeof(digest));

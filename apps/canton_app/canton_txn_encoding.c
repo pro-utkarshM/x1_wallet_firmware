@@ -398,6 +398,9 @@ const static char *WITHDRAW_CHOICE_ID = "TransferInstruction_Withdraw";
 const static char *ACCEPT_CHOICE_ID = "TransferInstruction_Accept";
 const static char *REJECT_CHOICE_ID = "TransferInstruction_Reject";
 const static char *PREAPPROVAL_CHOICE_ID = "TransferPreapprovalProposal";
+const static char *MERGE_DELEGATION_PROPOSAL_CHOICE_ID =
+    "MergeDelegationProposal";
+const static char *MERGE_DELEGATION_CHOICE_ID = "MergeDelegation";
 const static char *CANTON_TRANSFER_INSTRUCTION = "AmuletTransferInstruction";
 const static char *TRANSFER_LABEL = "transfer";
 const static char *SENDER_LABEL = "sender";
@@ -405,6 +408,8 @@ const static char *RECEIVER_LABEL = "receiver";
 const static char *AMOUNT_LABEL = "amount";
 const static char *START_TIME_LABEL = "requestedAt";
 const static char *EXPIRY_TIME_LABEL = "executeBefore";
+const static char *DELEGATION_LABEL = "delegation";
+const static char *OWNER_LABEL = "owner";
 
 /*****************************************************************************
  * GLOBAL VARIABLES
@@ -1779,6 +1784,61 @@ static void parse_display_info(const char *choice_id,
       }
 
       // TODO: parse other fields if required. ex 'provider'
+    }
+  } else if (strcmp(choice_id, MERGE_DELEGATION_PROPOSAL_CHOICE_ID) == 0) {
+    if (!record->has_record_id ||
+        strcmp(record->record_id.entity_name,
+               MERGE_DELEGATION_PROPOSAL_CHOICE_ID) != 0) {
+      return;
+    }
+    display_info->txn_type = CANTON_TXN_TYPE_MERGE_DELEGATION_PROPOSAL;
+
+    for (size_t i = 0; i < record->fields_count; i++) {
+      canton_record_field_t *merge_delegation_proposal_field =
+          &record->fields[i];
+      canton_value_t *merge_delegation_proposal_value =
+          merge_delegation_proposal_field->value;
+
+      if (!merge_delegation_proposal_value) {
+        continue;
+      }
+
+      if (strcmp(merge_delegation_proposal_field->label, DELEGATION_LABEL) ==
+          0) {
+        if (CANTON_VALUE_RECORD_TAG !=
+            merge_delegation_proposal_value->which_sum) {
+          continue;
+        }
+
+        canton_record_t *merge_delegation_proposal_record =
+            merge_delegation_proposal_value->record;
+        if (!merge_delegation_proposal_record->has_record_id ||
+            strcmp(merge_delegation_proposal_record->record_id.entity_name,
+                   MERGE_DELEGATION_CHOICE_ID) != 0) {
+          continue;
+        }
+
+        for (size_t j = 0; j < merge_delegation_proposal_record->fields_count;
+             j++) {
+          canton_record_field_t *merge_delegation_field =
+              &merge_delegation_proposal_record->fields[j];
+          canton_value_t *merge_delegation_value =
+              merge_delegation_field->value;
+
+          if (!merge_delegation_value) {
+            continue;
+          }
+
+          if (strcmp(merge_delegation_field->label, OWNER_LABEL) == 0) {
+            if (CANTON_VALUE_PARTY_TAG != merge_delegation_value->which_sum) {
+              continue;
+            }
+            strcpy(display_info->owner_party_id, merge_delegation_value->party);
+          }
+        }
+      }
+
+      // TODO: parse other fields if required. ex 'operator'
     }
   }
 }

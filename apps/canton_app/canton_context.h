@@ -61,6 +61,7 @@
 #define ACCEPT_TXN_TYPE_TEXT "Accept"
 #define REJECT_TXN_TYPE_TEXT "Reject"
 #define PREAPPROVAL_TXN_TYPE_TEXT "Enable Transfer Pre-approval"
+#define MERGE_DELEGATION_PROPOSAL_TXN_TYPE_TEXT "Enable UTXO Management"
 
 /*****************************************************************************
  * TYPEDEFS
@@ -81,6 +82,7 @@ typedef enum {
   CANTON_TXN_TYPE_ACCEPT = 3,
   CANTON_TXN_TYPE_REJECT = 4,
   CANTON_TXN_TYPE_PREAPPROVAL = 5,
+  CANTON_TXN_TYPE_MERGE_DELEGATION_PROPOSAL = 6,
 } canton_transaction_type_t;
 
 typedef struct {
@@ -90,6 +92,7 @@ typedef struct {
   char amount[30];
   uint64_t start_time;
   uint64_t expiry_time;
+  char owner_party_id[CANTON_PARTY_ID_STR_SIZE_MAX];
   // TODO: add more fields if/when required like memo, instrumentId, fee, etc.
 } canton_txn_display_info_t;
 
