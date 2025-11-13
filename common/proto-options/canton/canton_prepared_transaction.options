@@ -34,5 +34,5 @@ canton.DamlTransaction.DNode.node_id type:FT_STATIC max_size:10 fixed_length:fal
 
 # DamlTransaction
 canton.DamlTransaction.version type:FT_STATIC max_size:10 fixed_length:false
-canton.DamlTransaction.roots type:FT_STATIC max_size:10 max_count:50 fixed_length:false
+canton.DamlTransaction.roots type:FT_STATIC max_size:10 max_count:1 fixed_length:false
 canton.DamlTransaction.node_seeds type:FT_STATIC max_count:10 fixed_length:false

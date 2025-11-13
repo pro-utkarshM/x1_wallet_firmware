@@ -57,7 +57,7 @@
 
 #define TAP_TXN_TYPE_TEXT "Tap"
 #define TRANSFER_TXN_TYPE_TEXT "Transfer"
-#define WITHDRAW_TXN_TYPE_TEXT "Withdraw"
+#define WITHDRAW_TXN_TYPE_TEXT "Cancel"
 #define ACCEPT_TXN_TYPE_TEXT "Accept"
 #define REJECT_TXN_TYPE_TEXT "Reject"
 #define PREAPPROVAL_TXN_TYPE_TEXT "Enable Transfer Pre-approval"
@@ -76,6 +76,7 @@ typedef struct {
 } canton_txn_node_hash_t;
 
 typedef enum {
+  CANTON_TXN_TYPE_UNRECOGNIZED = -1,
   CANTON_TXN_TYPE_TAP = 0,
   CANTON_TXN_TYPE_TRANSFER = 1,
   CANTON_TXN_TYPE_WITHDRAW = 2,

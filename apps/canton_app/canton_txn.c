@@ -791,9 +791,8 @@ static bool get_user_verification(void) {
   }
 
   // verify expiry
-  if (txn_type != CANTON_TXN_TYPE_TAP &&
-      txn_type != CANTON_TXN_TYPE_PREAPPROVAL &&
-      display_info->start_time != 0 && display_info->expiry_time != 0) {
+  if (txn_type == CANTON_TXN_TYPE_TRANSFER && display_info->start_time != 0 &&
+      display_info->expiry_time != 0) {
     char expiry_display[100] = {'\0'};
     get_expiry_display(
         display_info->expiry_time, display_info->start_time, expiry_display);
@@ -893,6 +892,11 @@ void canton_sign_transaction(canton_query_t *query) {
   canton_txn_context =
       (canton_txn_context_t *)malloc(sizeof(canton_txn_context_t));
   memzero(canton_txn_context, sizeof(canton_txn_context_t));
+  canton_txn_context->unsigned_txn.txn_display_info.txn_type =
+      CANTON_TXN_TYPE_UNRECOGNIZED;
+  canton_txn_context->unsigned_txn.input_contract_hashes = NULL;
+  canton_txn_context->unsigned_txn.txn_node_seeds = NULL;
+  canton_txn_context->unsigned_txn.txn_node_hashes = NULL;
 
   canton_sig_t sig = {0};
 
