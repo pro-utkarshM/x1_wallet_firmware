@@ -197,5 +197,5 @@ void core_init_app_registry() {
   registry_add_app(get_stellar_app_desc());
   registry_add_app(get_sia_app_desc());
 }
-  registry_add_app(get_hyperliquid_app_desc());
+registry_add_app(get_hyperliquid_app_desc());
 }
