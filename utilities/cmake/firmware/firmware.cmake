@@ -1,4 +1,3 @@
-
 enable_language(C ASM)
 set(EXECUTABLE ${PROJECT_NAME}.elf)
 set(LINKER_SCRIPT STM32L486RGTX_FLASH.ld)
@@ -66,7 +65,8 @@ target_include_directories(${EXECUTABLE} PRIVATE
         apps/icp_app
         apps/exchange_app
         apps/stellar_app
-        
+        apps/canton_app
+
         src/
         src/menu
         src/wallet

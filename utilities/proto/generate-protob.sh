@@ -11,6 +11,8 @@ PROTO_SRC="$(pwd)/common/cypherock-common/proto"
 OPTIONS_DIR="$(pwd)/common/proto-options/"
 #  Path for tron-specific device protocol structures
 PROTO_TRON="$(pwd)/common/coin_support/tron_parse_txn/"
+#  Path for canton-specific device protocol structures
+PROTO_CANTON="$(pwd)/common/coin_support/canton_parse_txn/"
 
 test -d "${PROTO_SRC}"
 test -d "${PROTO_TRON}"
@@ -30,3 +32,5 @@ cd "${PROTO_SRC}"
 python3 "${NANOPB_GEN}" -q --generated-include-format "#include <%s>" --proto-path="${PROTO_SRC}" --options-path="${OPTIONS_DIR}"  $(find "${PROTO_SRC}" -name "*.proto") --output-dir="${OUTPUT_DIR}" --c-style -s anonymous_oneof:true -s long_names:false
 # generate tron files
 python3 "${NANOPB_GEN}" -q --generated-include-format "#include <%s>" --proto-path="${PROTO_TRON}" --options-path="${OPTIONS_DIR}"  $(find "${PROTO_TRON}" -name "*.proto") --output-dir="${OUTPUT_DIR}" --c-style -s anonymous_oneof:true -s long_names:false
+# generate canton files
+python3 "${NANOPB_GEN}" -q --generated-include-format "#include <%s>" --proto-path="${PROTO_CANTON}" --options-path="${OPTIONS_DIR}"  $(find "${PROTO_CANTON}" -name "*.proto") --output-dir="${OUTPUT_DIR}" --c-style -s anonymous_oneof:true -s long_names:false

@@ -1,15 +1,15 @@
 /**
- * @file    core_flow_init.c
+ * @file    canton_helpers.c
  * @author  Cypherock X1 Team
- * @brief
- * @copyright Copyright (c) 2023 HODL TECH PTE LTD
+ * @brief   Utilities specific to Canton chains
+ * @copyright Copyright (c) 2024 HODL TECH PTE LTD
  * <br/> You may obtain a copy of license at <a href="https://mitcc.org/"
  *target=_blank>https://mitcc.org/</a>
  *
  ******************************************************************************
  * @attention
  *
- * (c) Copyright 2023 by HODL TECH PTE LTD
+ * (c) Copyright 2024 by HODL TECH PTE LTD
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -59,39 +59,14 @@
 /*****************************************************************************
  * INCLUDES
  *****************************************************************************/
-#include "core_flow_init.h"
 
-#include "app_registry.h"
-#include "application_startup.h"
-#include "arbitrum_app.h"
-#include "avalanche_app.h"
-#include "bsc_app.h"
-#include "btc_app.h"
-#include "btc_main.h"
-#include "canton_main.h"
-#include "constellation_main.h"
-#include "dash_app.h"
-#include "doge_app.h"
-#include "eth_app.h"
-#include "evm_main.h"
-#include "exchange_main.h"
-#include "fantom_app.h"
-#include "hyperliquid_app.h"
-#include "icp_main.h"
-#include "inheritance_main.h"
-#include "ltc_app.h"
-#include "main_menu.h"
-#include "manager_app.h"
-#include "near_main.h"
-#include "onboarding.h"
-#include "optimism_app.h"
-#include "polygon_app.h"
-#include "restricted_app.h"
-#include "solana_main.h"
-#include "starknet_main.h"
-#include "stellar_main.h"
-#include "tron_main.h"
-#include "xrp_main.h"
+#include "canton_helpers.h"
+
+#include <stddef.h>
+
+#include "canton_context.h"
+#include "coin_utils.h"
+#include "sha2.h"
 
 /*****************************************************************************
  * EXTERN VARIABLES
@@ -100,30 +75,29 @@
 /*****************************************************************************
  * PRIVATE MACROS AND DEFINES
  *****************************************************************************/
-#define CORE_ENGINE_BUFFER_SIZE 10
 
 /*****************************************************************************
  * PRIVATE TYPEDEFS
  *****************************************************************************/
 
 /*****************************************************************************
+ * STATIC FUNCTION PROTOTYPES
+ *****************************************************************************/
+
+/*****************************************************************************
  * STATIC VARIABLES
  *****************************************************************************/
-flow_step_t *core_step_buffer[CORE_ENGINE_BUFFER_SIZE] = {0};
-engine_ctx_t core_step_engine_ctx = {
-    .array = &core_step_buffer[0],
-    .current_index = 0,
-    .max_capacity = sizeof(core_step_buffer) / sizeof(core_step_buffer[0]),
-    .num_of_elements = 0,
-    .size_of_element = sizeof(core_step_buffer[0])};
 
 /*****************************************************************************
  * GLOBAL VARIABLES
  *****************************************************************************/
-
-/*****************************************************************************
- * STATIC FUNCTION PROTOTYPES
- *****************************************************************************/
+// For references to values, check get_party_id function
+static uint8_t CANTON_HASH_PURPOSE[CANTON_HASH_PURPOSE_SIZE] = {0x00,
+                                                                0x00,
+                                                                0x00,
+                                                                0x0c};
+static uint8_t CANTON_HASH_PREFIX[CANTON_HASH_PREFIX_SIZE] = {0x12, 0x20};
+static const char CANTON_PARTY_ID_SEPARATOR[] = "::";
 
 /*****************************************************************************
  * STATIC FUNCTIONS
@@ -132,69 +106,85 @@ engine_ctx_t core_step_engine_ctx = {
 /*****************************************************************************
  * GLOBAL FUNCTIONS
  *****************************************************************************/
-engine_ctx_t *get_core_flow_ctx(void) {
-  engine_reset_flow(&core_step_engine_ctx);
 
-  const manager_onboarding_step_t step = onboarding_get_last_step();
-  /// Check if onboarding is complete or not
-  if (MANAGER_ONBOARDING_STEP_COMPLETE != step) {
-    // reset partial-onboarding if auth flag is reset (which can happen via
-    // secure-bootloader). Refer PRF-7078
-    if (MANAGER_ONBOARDING_STEP_VIRGIN_DEVICE < step &&
-        DEVICE_NOT_AUTHENTICATED == get_auth_state()) {
-      // bypass onboarding_set_step_done as we want to force reset
-      save_onboarding_step(MANAGER_ONBOARDING_STEP_VIRGIN_DEVICE);
-    }
-
-    // Skip onbaording for infield devices with pairing and/or wallets count is
-    // greater than zero
-    if ((get_wallet_count() > 0) || (get_keystore_used_count() > 0)) {
-      onboarding_set_step_done(MANAGER_ONBOARDING_STEP_COMPLETE);
-    } else {
-      engine_add_next_flow_step(&core_step_engine_ctx, onboarding_get_step());
-      return &core_step_engine_ctx;
-    }
+bool canton_derivation_path_guard(const uint32_t *path, uint8_t levels) {
+  bool status = false;
+  if (levels != CANTON_IMPLICIT_ACCOUNT_DEPTH) {
+    return status;
   }
 
-  // Check if device needs to go to restricted state or not
-  if (DEVICE_AUTHENTICATED != get_auth_state()) {
-    engine_add_next_flow_step(&core_step_engine_ctx, restricted_app_get_step());
-    return &core_step_engine_ctx;
-  }
+  uint32_t purpose = path[0], coin = path[1], account = path[2],
+           change = path[3], address = path[4];
 
-  if (MANAGER_ONBOARDING_STEP_COMPLETE == get_onboarding_step() &&
-      DEVICE_AUTHENTICATED == get_auth_state()) {
-    check_invalid_wallets();
-  }
+  // m/44'/6767'/0'/0'/i'
+  status = (CANTON_PURPOSE_INDEX == purpose && CANTON_COIN_INDEX == coin &&
+            CANTON_ACCOUNT_INDEX == account && CANTON_CHANGE_INDEX == change &&
+            is_hardened(address));
 
-  // Finally enable all flows from the user
-  engine_add_next_flow_step(&core_step_engine_ctx, main_menu_get_step());
-  return &core_step_engine_ctx;
+  return status;
 }
 
-void core_init_app_registry() {
-  registry_add_app(get_manager_app_desc());
-  registry_add_app(get_btc_app_desc());
-  registry_add_app(get_ltc_app_desc());
-  registry_add_app(get_doge_app_desc());
-  registry_add_app(get_dash_app_desc());
-  registry_add_app(get_eth_app_desc());
-  registry_add_app(get_near_app_desc());
-  registry_add_app(get_polygon_app_desc());
-  registry_add_app(get_solana_app_desc());
-  registry_add_app(get_bsc_app_desc());
-  registry_add_app(get_fantom_app_desc());
-  registry_add_app(get_avalanche_app_desc());
-  registry_add_app(get_optimism_app_desc());
-  registry_add_app(get_arbitrum_app_desc());
-  registry_add_app(get_tron_app_desc());
-  registry_add_app(get_inheritance_app_desc());
-  registry_add_app(get_xrp_app_desc());
-  registry_add_app(get_starknet_app_desc());
-  registry_add_app(get_constellation_app_desc());
-  registry_add_app(get_icp_app_desc());
-  registry_add_app(get_exchange_app_desc());
-  registry_add_app(get_stellar_app_desc());
-  registry_add_app(get_canton_app_desc());
-  registry_add_app(get_hyperliquid_app_desc());
+void sha256_with_prefix(const uint8_t *data, size_t data_size, uint8_t *hash) {
+  if (!data || !hash || data_size == 0) {
+    return;
+  }
+
+  uint8_t digest[SHA256_DIGEST_LENGTH] = {0};
+  sha256_Raw(data, data_size, digest);
+
+  memcpy(hash, CANTON_HASH_PREFIX, CANTON_HASH_PREFIX_SIZE);
+  memcpy(hash + CANTON_HASH_PREFIX_SIZE, digest, SHA256_DIGEST_LENGTH);
+}
+
+bool get_party_id(const uint8_t *public_key, char *party_id) {
+  if (!public_key || !party_id) {
+    return false;
+  }
+
+  // Ref:
+  // https://docs.digitalasset.com/integrate/devnet/party-management/index.html#choosing-a-party-hint
+  // party_id = party_hint_str + :: + fingerprint_str
+  // party_hint can by anything like "alice", "bob", "my-wallet", etc.
+  // We are using first 5 bytes of sha256_hash(fingerprint) to keep it
+  // deterministic
+  // party_hint = sha256_hash(fingerprint)[:5]
+  // Ref:
+  // https://github.com/hyperledger-labs/splice-wallet-kernel/blob/main/core/ledger-client/src/topology-write-service.ts#L143
+  // Ref:
+  // https://github.com/hyperledger-labs/splice-wallet-kernel/blob/main/core/ledger-client/src/topology-write-service.ts#L62
+  // fingerprint = 0x1220 + sha256(HASH_PURPOSE + public_key)
+  uint8_t party_hint[CANTON_PARTY_HINT_SIZE] = {0};
+  uint8_t fingerprint[CANTON_FINGERPRINT_SIZE] = {0};
+  char party_hint_str[CANTON_PARTY_HINT_STR_SIZE] = {'\0'};
+  char fingerprint_str[CANTON_FINGERPRINT_STR_SIZE] = {'\0'};
+
+  // HASH_PURPOSE + public_key
+  uint8_t hash_buf[CANTON_HASH_PURPOSE_SIZE + CANTON_PUB_KEY_SIZE] = {0};
+  memcpy(hash_buf, CANTON_HASH_PURPOSE, CANTON_HASH_PURPOSE_SIZE);
+  memcpy(hash_buf + CANTON_HASH_PURPOSE_SIZE, public_key, CANTON_PUB_KEY_SIZE);
+
+  sha256_with_prefix(hash_buf, sizeof(hash_buf), fingerprint);
+
+  uint8_t digest[SHA256_DIGEST_LENGTH] = {0};
+  sha256_Raw(fingerprint, CANTON_FINGERPRINT_SIZE, digest);
+  memcpy(party_hint, digest, CANTON_PARTY_HINT_SIZE);
+
+  if (!byte_array_to_hex_string(party_hint,
+                                CANTON_PARTY_HINT_SIZE,
+                                party_hint_str,
+                                CANTON_PARTY_HINT_STR_SIZE)) {
+    return false;
+  }
+  if (!byte_array_to_hex_string(fingerprint,
+                                CANTON_FINGERPRINT_SIZE,
+                                fingerprint_str,
+                                CANTON_FINGERPRINT_STR_SIZE)) {
+    return false;
+  }
+
+  strncpy(party_id, party_hint_str, CANTON_PARTY_HINT_STR_SIZE);
+  strncat(party_id, CANTON_PARTY_ID_SEPARATOR, CANTON_PARTY_ID_SEPARATOR_SIZE);
+  strncat(party_id, fingerprint_str, CANTON_FINGERPRINT_STR_SIZE);
+
+  return true;
 }
