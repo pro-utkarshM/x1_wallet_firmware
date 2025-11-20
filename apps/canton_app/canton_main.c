@@ -1,7 +1,7 @@
 /**
- * @file    sia_main.c
+ * @file    canton_main.c
  * @author  Cypherock X1 Team
- * @brief   A common entry point to various sia coin actions supported.
+ * @brief   Common entry point for canton
  * @copyright Copyright (c) 2025 HODL TECH PTE LTD
  * <br/> You may obtain a copy of license at <a href="https://mitcc.org/"
  *target=_blank>https://mitcc.org/</a>
@@ -60,11 +60,19 @@
  * INCLUDES
  *****************************************************************************/
 
-#include "sia_main.h"
+#include "canton_main.h"
 
-#include "sia_api.h"
-#include "sia_priv.h"
+#include <stddef.h>
+#include <stdint.h>
+
+#include "app_registry.h"
+#include "canton/core.pb.h"
+#include "canton_api.h"
+#include "canton_priv.h"
+#include "core.pb.h"
+#include "error.pb.h"
 #include "status_api.h"
+#include "usb_api.h"
 
 /*****************************************************************************
  * EXTERN VARIABLES
@@ -79,73 +87,75 @@
  *****************************************************************************/
 
 /*****************************************************************************
- * GLOBAL VARIABLES
- *****************************************************************************/
-
-/*****************************************************************************
  * STATIC FUNCTION PROTOTYPES
  *****************************************************************************/
+
 /**
- * @brief Entry point for the Sia application of the X1 vault. It is invoked
- * by the X1 vault firmware, as soon as there is a USB request raised for the
- * Sia app.
+ * @brief Entry poont for the canton application of x1 vault. Invoked by x1
+ * vault firmware when a USB request is recieved for canton application.
  *
- * @param usb_evt The USB event which triggered invocation of the Sia app
+ * @param usb_event The USB event which triggered invocation
+ * @param canton_app_config Additional canton application configuration
  */
-void sia_main(usb_event_t usb_evt, const void *sia_app_config);
+void canton_main(usb_event_t usb_event, const void *canton_app_config);
 
 /*****************************************************************************
  * STATIC VARIABLES
  *****************************************************************************/
 
-static const cy_app_desc_t sia_app_desc = {.id = 27,
-                                           .version =
-                                               {
-                                                   .major = 1,
-                                                   .minor = 0,
-                                                   .patch = 0,
-                                               },
-                                           .app = sia_main,
-                                           .app_config = NULL};
+static const cy_app_desc_t canton_app_desc = {
+    .id = 26,
+    .version = {.major = 1, .minor = 0, .patch = 0},
+    .app = canton_main,
+    .app_config = NULL};
+
+/*****************************************************************************
+ * GLOBAL VARIABLES
+ *****************************************************************************/
 
 /*****************************************************************************
  * STATIC FUNCTIONS
  *****************************************************************************/
-void sia_main(usb_event_t usb_evt, const void *sia_app_config) {
-  sia_query_t query = SIA_QUERY_INIT_DEFAULT;
 
-  if (false == decode_sia_query(usb_evt.p_msg, usb_evt.msg_size, &query)) {
+void canton_main(usb_event_t usb_event, const void *canton_app_config) {
+  canton_query_t query = CANTON_QUERY_INIT_DEFAULT;
+  if (!decode_canton_query(usb_event.p_msg, usb_event.msg_size, &query)) {
     return;
   }
 
-  /* Set status to CORE_DEVICE_IDLE_STATE_USB to indicate host that we are now
-   * servicing a USB initiated command */
+  /* set device status to CORE_DEVICE_IDLE_STATE_USB to indicate host that we
+   * are now servicing a usb initiated command */
   core_status_set_idle_state(CORE_DEVICE_IDLE_STATE_USB);
 
   switch ((uint8_t)query.which_request) {
-    case SIA_QUERY_GET_PUBLIC_KEYS_TAG:
-    case SIA_QUERY_GET_USER_VERIFIED_PUBLIC_KEY_TAG: {
-      sia_get_pub_keys(&query);
+    case CANTON_QUERY_GET_PUBLIC_KEYS_TAG:
+    case CANTON_QUERY_GET_USER_VERIFIED_PUBLIC_KEY_TAG: {
+      canton_get_pub_keys(&query);
       break;
     }
-    case SIA_QUERY_SIGN_TXN_TAG: {
-      sia_sign_transaction(&query);
+    case CANTON_QUERY_SIGN_TXN_TAG: {
+      canton_sign_transaction(&query);
       break;
     }
+
+    case CANTON_QUERY_SIGN_TOPOLOGY_TXN_TAG: {
+      canton_sign_topology_transaction(&query);
+      break;
+    }
+
+    /* Incase we encounter an invalid query */
     default: {
-      /* In case we ever encounter invalid query, convey to the host app */
-      sia_send_error(ERROR_COMMON_ERROR_CORRUPT_DATA_TAG,
-                     ERROR_DATA_FLOW_INVALID_QUERY);
+      canton_send_error(ERROR_COMMON_ERROR_CORRUPT_DATA_TAG,
+                        ERROR_DATA_FLOW_INVALID_QUERY);
       break;
     }
   }
-
-  return;
 }
 
 /*****************************************************************************
  * GLOBAL FUNCTIONS
  *****************************************************************************/
-const cy_app_desc_t *get_sia_app_desc() {
-  return &sia_app_desc;
+
+const cy_app_desc_t *get_canton_app_desc() {
+  return &canton_app_desc;
 }

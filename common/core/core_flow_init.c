@@ -68,6 +68,7 @@
 #include "bsc_app.h"
 #include "btc_app.h"
 #include "btc_main.h"
+#include "canton_main.h"
 #include "constellation_main.h"
 #include "dash_app.h"
 #include "doge_app.h"
@@ -196,5 +197,6 @@ void core_init_app_registry() {
   registry_add_app(get_exchange_app_desc());
   registry_add_app(get_stellar_app_desc());
   registry_add_app(get_sia_app_desc());
+  registry_add_app(get_canton_app_desc());
   registry_add_app(get_hyperliquid_app_desc());
 }

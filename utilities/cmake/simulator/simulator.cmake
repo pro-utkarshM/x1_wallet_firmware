@@ -65,6 +65,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
         apps/exchange_app
         apps/stellar_app
         apps/sia_app
+        apps/canton_app
 
         src/
         src/menu
