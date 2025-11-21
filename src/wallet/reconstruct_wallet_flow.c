@@ -498,6 +498,9 @@ bool reconstruct_sia_seed(const uint8_t *wallet_id,
   } else {
     mnemonic_clear();
     clear_wallet_data();
+    memzero(bits, sizeof(bits));
+    memzero(entropy, sizeof(entropy));
+    entropy_bytes = 0;
     return result;
   }
 
@@ -506,5 +509,8 @@ bool reconstruct_sia_seed(const uint8_t *wallet_id,
 
   mnemonic_clear();
   clear_wallet_data();
+  memzero(bits, sizeof(bits));
+  memzero(entropy, sizeof(entropy));
+  entropy_bytes = 0;
   return result;
 }

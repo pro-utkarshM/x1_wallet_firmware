@@ -303,9 +303,7 @@ static bool get_public_key(const uint8_t *seed,
   memcpy(buffer, seed, 32);
   uint64_t index = path[0];
 
-  for (int i = 0; i < 8; i++) {
-    buffer[32 + i] = (index >> (i * 8)) & 0xFF;
-  }
+  write_uint64_le(&buffer[32], index);
 
   int result = blake2b(buffer, 40, private_key, 32);
 
@@ -336,10 +334,14 @@ static bool send_public_keys(sia_query_t *query,
                              const pb_size_t count,
                              const pb_size_t which_request,
                              const pb_size_t which_response) {
-  static char address_list[100][SIA_ADDRESS_SIZE];
+  char (*address_list)[SIA_ADDRESS_SIZE] = malloc(count * SIA_ADDRESS_SIZE);
+  if (!address_list) {
+    return false;
+  }
 
   for (int i = 0; i < count; i++) {
     if (!sia_generate_address(pubkey_list[i], address_list[i])) {
+      free(address_list);
       return false;
     }
   }
@@ -376,9 +378,11 @@ static bool send_public_keys(sia_query_t *query,
     if (!sia_get_query(query, which_request) ||
         !check_which_request(query,
                              SIA_GET_PUBLIC_KEYS_REQUEST_FETCH_NEXT_TAG)) {
+      free(address_list);
       return false;
     }
   }
+  free(address_list);
   return true;
 }
 

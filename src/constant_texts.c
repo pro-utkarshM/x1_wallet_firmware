@@ -602,10 +602,6 @@ const char *ui_text_account_id = "Account Id";
 const char *ui_text_verify_principal_id = "Verify principal id";
 const char *ui_text_verify_account_id = "Verify account id";
 
-// Sia
-const char *ui_text_verify_sia_amount = "Verify amount\n%.6f %s";
-const char *ui_text_verify_sia_fees = "Verify Fee\n%.6f %s";
-
 #ifdef ALLOW_LOG_EXPORT
 const char *ui_text_send_logs_prompt =
     "Send logs to the " VENDOR_COMPANION_APP " app?";

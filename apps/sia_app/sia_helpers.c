@@ -112,6 +112,18 @@ bool sia_derivation_path_guard(const uint32_t *path, uint8_t levels) {
   return status;
 }
 
+bool sia_full_address(const uint8_t *address_hash, char *full_address) {
+  uint8_t checksum[32];
+  if (blake2b(address_hash, 32, checksum, 32) != 0) {
+    return false;
+  }
+
+  byte_array_to_hex_string(address_hash, 32, full_address, 77);
+  byte_array_to_hex_string(checksum, 6, full_address + 64, 13);
+
+  return true;
+}
+
 bool sia_generate_address(const uint8_t *public_key, char *address) {
   if (!public_key || !address) {
     return false;
@@ -129,55 +141,49 @@ bool sia_generate_address(const uint8_t *public_key, char *address) {
       0xa7, 0x6e, 0x62, 0x4a, 0x87, 0x98, 0xcb, 0x63, 0x49, 0x7b};
 
   // Encode public key in Sia format
-  uint8_t pubkey_buf[57];
-  pubkey_buf[0] = 0x00;
-  memcpy(pubkey_buf + 1, "ed25519", 7);
-  memset(pubkey_buf + 8, 0, 9);
-  pubkey_buf[17] = 32;
-  memset(pubkey_buf + 18, 0, 7);
-  memcpy(pubkey_buf + 25, public_key, 32);
 
-  uint8_t pubkey_hash[32];
+  uint8_t pubkey_buf[57] = {0};
+  size_t offset = 0;
+  pubkey_buf[offset++] = 0x00;
+  memcpy(pubkey_buf + offset, "ed25519", 7);
+  offset += 7;
+  memset(pubkey_buf + offset, 0, 9);
+  offset += 9;
+  pubkey_buf[offset++] = 32;
+  memset(pubkey_buf + offset, 0, 7);
+  offset += 7;
+  memcpy(pubkey_buf + offset, public_key, 32);
+  offset += 32;
+
+  uint8_t pubkey_hash[32] = {0};
   if (blake2b(pubkey_buf, sizeof(pubkey_buf), pubkey_hash, 32) != 0) {
     return false;
   }
 
   // Build Merkle tree: timelock + pubkey
-  uint8_t merkle_buf[65];
+  uint8_t merkle_buf[65] = {0};
   merkle_buf[0] = 0x01;
 
   // Complete tree: (timelock+pubkey) + sigsrequired
   memcpy(merkle_buf + 1, timelock_hash, 32);
   memcpy(merkle_buf + 33, pubkey_hash, 32);
 
-  uint8_t intermediate[32];
+  uint8_t intermediate[32] = {0};
   if (blake2b(merkle_buf, sizeof(merkle_buf), intermediate, 32) != 0) {
     return false;
   }
 
   // Complete tree: (timelock + pubkey) + sigsrequired
+  memset(merkle_buf, 0, sizeof(merkle_buf));
+  merkle_buf[0] = 0x01;
   memcpy(merkle_buf + 1, intermediate, 32);
   memcpy(merkle_buf + 33, sigsrequired_hash, 32);
 
-  uint8_t addr[32];
+  uint8_t addr[32] = {0};
   if (blake2b(merkle_buf, sizeof(merkle_buf), addr, 32) != 0) {
     return false;
   }
 
   // Add checksum and convert to hex string
-  uint8_t checksum[32];
-  if (blake2b(addr, 32, checksum, 32) != 0) {
-    return false;
-  }
-
-  uint8_t final_addr[38];    // 32-byte address + 6-byte checksum
-  memcpy(final_addr, addr, 32);
-  memcpy(final_addr + 32, checksum, 6);
-
-  for (int i = 0; i < 38; i++) {
-    sprintf(address + (i * 2), "%02x", final_addr[i]);
-  }
-  address[76] = '\0';
-
-  return true;
+  return sia_full_address(addr, address);
 }

@@ -44,14 +44,6 @@
 double sia_convert_to_sc(uint64_t lo, uint64_t hi);
 
 /**
- * @brief Generate full Sia address string from 32-byte address hash
- * @param address_hash 32-byte address hash from transaction output
- * @param full_address Output buffer for 76-character address + null terminator
- * @return bool True if generation successful, false otherwise
- */
-bool sia_full_address(const uint8_t *address_hash, char *full_address);
-
-/**
  * @brief Parse Sia transaction blob into structured format
  * @param blob Raw transaction data from host
  * @param blob_len Length of transaction data

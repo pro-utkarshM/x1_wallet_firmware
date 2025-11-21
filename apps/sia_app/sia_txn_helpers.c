@@ -112,24 +112,6 @@ double sia_convert_to_sc(uint64_t lo, uint64_t hi) {
   }
 }
 
-bool sia_full_address(const uint8_t *address_hash, char *full_address) {
-  uint8_t checksum[32];
-  if (blake2b(address_hash, 32, checksum, 32) != 0) {
-    return false;
-  }
-
-  for (int i = 0; i < 32; i++) {
-    sprintf(full_address + (i * 2), "%02x", address_hash[i]);
-  }
-
-  for (int i = 0; i < 6; i++) {
-    sprintf(full_address + 64 + (i * 2), "%02x", checksum[i]);
-  }
-
-  full_address[76] = '\0';
-  return true;
-}
-
 bool sia_parse_transaction(const uint8_t *blob,
                            size_t blob_len,
                            sia_transaction_t *txn) {

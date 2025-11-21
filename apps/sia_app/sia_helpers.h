@@ -54,6 +54,14 @@
 bool sia_derivation_path_guard(const uint32_t *path, uint8_t levels);
 
 /**
+ * @brief Generate full Sia address string from 32-byte address hash
+ * @param address_hash 32-byte address hash from transaction output
+ * @param full_address Output buffer for 76-character address + null terminator
+ * @return bool True if generation successful, false otherwise
+ */
+bool sia_full_address(const uint8_t *address_hash, char *full_address);
+
+/**
  * @brief Generates a Sia address from a public key
  * @details Follows the Sia address generation algorithm:
  * 1. Creates unlock condition Merkle tree (timelock + pubkey + sigsRequired)

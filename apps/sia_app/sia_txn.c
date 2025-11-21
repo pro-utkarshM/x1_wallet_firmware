@@ -386,11 +386,14 @@ static bool get_user_verification(void) {
 
   double amount_sc = sia_convert_to_sc(decoded_txn->outputs[0].value_lo,
                                        decoded_txn->outputs[0].value_hi);
+  char amount_str[50];
+  snprintf(amount_str, sizeof(amount_str), "%.6f", amount_sc);
+
   char amount_display[100] = {0};
   snprintf(amount_display,
            sizeof(amount_display),
-           ui_text_verify_sia_amount,
-           amount_sc,
+           UI_TEXT_VERIFY_AMOUNT,
+           amount_str,
            SIA_LUNIT);
 
   if (!core_confirmation(amount_display, sia_send_error)) {
@@ -399,12 +402,11 @@ static bool get_user_verification(void) {
 
   // Verify fee
   double fee_sc = sia_convert_to_sc(decoded_txn->fee_lo, decoded_txn->fee_hi);
+  char fee_str[50];
+  snprintf(fee_str, sizeof(fee_str), "%.6f", fee_sc);
   char fee_display[100] = {0};
-  snprintf(fee_display,
-           sizeof(fee_display),
-           ui_text_verify_sia_fees,
-           fee_sc,
-           SIA_LUNIT);
+  snprintf(
+      fee_display, sizeof(fee_display), UI_TEXT_VERIFY_FEE, fee_str, SIA_LUNIT);
 
   if (!core_confirmation(fee_display, sia_send_error)) {
     return false;
@@ -468,16 +470,16 @@ static int sia_compute_semantic_hash(const sia_transaction_t *txn,
     blake2b_Update(&hasher, txn->outputs[i].address_hash, 32);
   }
 
-  // Empty fields (48 bytes of zeros + 1 false byte)
-  uint8_t zero_bytes[8] = {0};
-  blake2b_Update(&hasher, zero_bytes, 8);    // Sia Funds inputs count
-  blake2b_Update(&hasher, zero_bytes, 8);    // Sia Funds outputs count
-  blake2b_Update(&hasher, zero_bytes, 8);    // File contracts count
-  blake2b_Update(&hasher, zero_bytes, 8);    // File contract revisions count
-  blake2b_Update(&hasher, zero_bytes, 8);    // File contract resolutions count
-  blake2b_Update(&hasher, zero_bytes, 8);    // Attestations count
-  blake2b_Update(&hasher, zero_bytes, 8);    // Arbitrary data length
-
+  // Empty fields (56 bytes of zeros + 1 false byte) for
+  // 1. Sia Funds inputs count
+  // 2. Sia Funds outputs count
+  // 3. File contracts count
+  // 4. File contract revisions count
+  // 5. File contract resolutions count
+  // 6. Attestations count
+  // 7. Arbitrary data length
+  uint8_t zero_bytes[8 * 7] = {0};
+  blake2b_Update(&hasher, zero_bytes, 56);
   uint8_t false_byte = 0;
   blake2b_Update(&hasher, &false_byte, 1);    // New foundation address
 
