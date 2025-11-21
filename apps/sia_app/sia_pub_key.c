@@ -334,7 +334,7 @@ static bool send_public_keys(sia_query_t *query,
                              const pb_size_t count,
                              const pb_size_t which_request,
                              const pb_size_t which_response) {
-  char (*address_list)[SIA_ADDRESS_SIZE] = malloc(count * SIA_ADDRESS_SIZE);
+  char(*address_list)[SIA_ADDRESS_SIZE] = malloc(count * SIA_ADDRESS_SIZE);
   if (!address_list) {
     return false;
   }
