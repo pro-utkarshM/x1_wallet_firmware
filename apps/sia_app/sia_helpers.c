@@ -63,6 +63,7 @@
 #include "sia_helpers.h"
 
 #include "sia_context.h"
+#include "utils.h"
 
 /*****************************************************************************
  * EXTERN VARIABLES
