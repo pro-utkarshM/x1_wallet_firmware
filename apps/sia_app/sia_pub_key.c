@@ -334,14 +334,10 @@ static bool send_public_keys(sia_query_t *query,
                              const pb_size_t count,
                              const pb_size_t which_request,
                              const pb_size_t which_response) {
-  char(*address_list)[SIA_ADDRESS_SIZE] = malloc(count * SIA_ADDRESS_SIZE);
-  if (!address_list) {
-    return false;
-  }
+  char address_list[count][SIA_ADDRESS_SIZE];
 
   for (int i = 0; i < count; i++) {
     if (!sia_generate_address(pubkey_list[i], address_list[i])) {
-      free(address_list);
       return false;
     }
   }
@@ -378,11 +374,9 @@ static bool send_public_keys(sia_query_t *query,
     if (!sia_get_query(query, which_request) ||
         !check_which_request(query,
                              SIA_GET_PUBLIC_KEYS_REQUEST_FETCH_NEXT_TAG)) {
-      free(address_list);
       return false;
     }
   }
-  free(address_list);
   return true;
 }
 

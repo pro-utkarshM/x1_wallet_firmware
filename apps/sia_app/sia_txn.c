@@ -437,6 +437,7 @@ static int sia_compute_semantic_hash(const sia_transaction_t *txn,
                                      uint8_t hash[32]) {
   blake2b_state hasher;
   blake2b_Init(&hasher, 32);
+  size_t offset = 0;
 
   // Signature prefix
   const uint8_t sig_prefix[] = {
@@ -447,27 +448,18 @@ static int sia_compute_semantic_hash(const sia_transaction_t *txn,
   const uint8_t replay = 2;
   blake2b_Update(&hasher, &replay, 1);
 
-  // SC Input count (little-endian)
-  uint8_t count_bytes[8];
-  write_uint64_le(count_bytes, txn->input_count);
-  blake2b_Update(&hasher, count_bytes, 8);
+  // Use raw buffer: Input count + Parent IDs + Output count
+  size_t len = 8 + (txn->input_count * 32) + 8;
+  blake2b_Update(&hasher, &sia_txn_context->transaction[offset], len);
+  offset += len;
 
-  // Parent IDs (32 bytes each)
-  for (int i = 0; i < txn->input_count; i++) {
-    blake2b_Update(&hasher, txn->parent_ids[i], 32);
-  }
-
-  // SC Output count (little-endian)
-  write_uint64_le(count_bytes, txn->output_count);
-  blake2b_Update(&hasher, count_bytes, 8);
-
-  // SC Outputs (V2Currency + address each)
   for (int i = 0; i < txn->output_count; i++) {
-    write_uint64_le(count_bytes, txn->outputs[i].value_lo);
-    blake2b_Update(&hasher, count_bytes, 8);
-    write_uint64_le(count_bytes, txn->outputs[i].value_hi);
-    blake2b_Update(&hasher, count_bytes, 8);
-    blake2b_Update(&hasher, txn->outputs[i].address_hash, 32);
+    // Raw format: Address(32) + Value_Lo(8) + Value_Hi(8)
+    // Hash format: Value_Lo(8) + Value_Hi(8) + Address(32)
+    blake2b_Update(&hasher, &sia_txn_context->transaction[offset + 32], 8);
+    blake2b_Update(&hasher, &sia_txn_context->transaction[offset + 40], 8);
+    blake2b_Update(&hasher, &sia_txn_context->transaction[offset], 32);
+    offset += 48;
   }
 
   // Empty fields (56 bytes of zeros + 1 false byte) for
@@ -484,10 +476,7 @@ static int sia_compute_semantic_hash(const sia_transaction_t *txn,
   blake2b_Update(&hasher, &false_byte, 1);    // New foundation address
 
   // Miner fee (V2Currency format)
-  write_uint64_le(count_bytes, txn->fee_lo);
-  blake2b_Update(&hasher, count_bytes, 8);
-  write_uint64_le(count_bytes, txn->fee_hi);
-  blake2b_Update(&hasher, count_bytes, 8);
+  blake2b_Update(&hasher, &sia_txn_context->transaction[offset], 16);
 
   blake2b_Final(&hasher, hash, 32);
   return 0;
