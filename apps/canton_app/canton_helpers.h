@@ -72,4 +72,17 @@ void sha256_with_prefix(const uint8_t *data, size_t data_size, uint8_t *hash);
  */
 bool get_party_id(const uint8_t *public_key, char *party_id);
 
+/**
+ * @brief Verifies the party id derived from the public key with the given party
+ * id.
+ * @details The function will derive the party id from the public key and
+ * compare it with the given party id.
+ *
+ * @param[in] public_key The public key
+ * @param[in] party_id The party id to compare with
+ * @return bool Indicates if the party id is valid
+ * @retval true if the party id is valid
+ * @retval false otherwise
+ */
+bool verify_party_id(uint8_t *public_key, char *party_id);
 #endif    // CANTON_HELPERS_H

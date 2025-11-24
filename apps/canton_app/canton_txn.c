@@ -71,6 +71,7 @@
 #include "canton_api.h"
 #include "canton_context.h"
 #include "canton_helpers.h"
+#include "canton_instruments.h"
 #include "canton_priv.h"
 #include "canton_txn_encoding.h"
 #include "coin_utils.h"
@@ -696,6 +697,42 @@ static void get_expiry_display(uint64_t expiry_time,
   }
 }
 
+static bool is_instrument_whitelisted(
+    canton_instrument_t *input_instrument,
+    canton_instrument_data_t *output_instrument_data) {
+  const canton_instrument_data_t *match = NULL;
+  bool status = false;
+
+  for (int16_t i = 0; i < CANTON_WHITELISTED_INSTRUMENT_COUNT; i++) {
+    if (strcmp(input_instrument->id, canton_instrument_data[i].instrument.id) ==
+            0 &&
+        strcmp(input_instrument->admin,
+               canton_instrument_data[i].instrument.admin) == 0) {
+      match = &canton_instrument_data[i];
+      status = true;
+      break;
+    }
+  }
+
+  if (NULL != output_instrument_data && NULL != match) {
+    memcpy(output_instrument_data, match, sizeof(*match));
+  }
+
+  // return unknown empty instrument data if not found in the whitelist
+  if (!status) {
+    canton_instrument_data_t empty_instrument_data = {
+        .instrument = {.id = "", .admin = ""},
+        .symbol = "",
+        .decimal = 0,
+    };
+    memcpy(output_instrument_data,
+           &empty_instrument_data,
+           sizeof(empty_instrument_data));
+  }
+
+  return status;
+}
+
 static bool get_user_verification(void) {
   canton_txn_display_info_t *display_info =
       &canton_txn_context->unsigned_txn.txn_display_info;
@@ -709,6 +746,39 @@ static bool get_user_verification(void) {
     if (!exchange_validate_stored_signature(receiver_party_id,
                                             sizeof(receiver_party_id))) {
       return false;
+    }
+  }
+
+  canton_instrument_data_t instrument_data = {0};
+  if (txn_type != CANTON_TXN_TYPE_PREAPPROVAL &&
+      txn_type != CANTON_TXN_TYPE_MERGE_DELEGATION_PROPOSAL) {
+    if (!is_instrument_whitelisted(&display_info->instrument,
+                                   &instrument_data)) {
+      // Instrument Unverifed, Display warning
+      delay_scr_init(ui_text_unverified_token, DELAY_TIME);
+
+      // verify instrument id and admin
+      if (!core_scroll_page(UI_TEXT_VERIFY_INSTRUMENT_ID,
+                            display_info->instrument.id,
+                            canton_send_error) ||
+          !core_scroll_page(UI_TEXT_VERIFY_INSTRUMENT_ADMIN,
+                            display_info->instrument.admin,
+                            canton_send_error)) {
+        return false;
+      }
+
+    } else if (strcmp(display_info->instrument.id, "Amulet") !=
+               0) {    // Only show confirmation for instruments other than
+                       // Amulet(Coin)
+      char msg[100] = "";
+      snprintf(msg,
+               sizeof(msg),
+               UI_TEXT_SIGN_TOKEN_TXN_PROMPT,
+               instrument_data.symbol,
+               CANTON_NAME);
+      if (!core_confirmation(msg, canton_send_error)) {
+        return false;
+      }
     }
   }
 
@@ -783,7 +853,7 @@ static bool get_user_verification(void) {
              sizeof(display),
              UI_TEXT_VERIFY_AMOUNT,
              amount_string,
-             CANTON_LUNIT);
+             instrument_data.symbol);
 
     if (!core_confirmation(display, canton_send_error)) {
       return false;
@@ -804,15 +874,6 @@ static bool get_user_verification(void) {
 
   set_app_flow_status(CANTON_SIGN_TXN_STATUS_VERIFY);
 
-  return true;
-}
-
-static bool verify_party_id(uint8_t *public_key, char *party_id) {
-  char derived_party_id[CANTON_PARTY_ID_SIZE] = {0};
-  get_party_id(public_key, derived_party_id);
-  if (strcmp(derived_party_id, party_id) != 0) {
-    return false;
-  }
   return true;
 }
 

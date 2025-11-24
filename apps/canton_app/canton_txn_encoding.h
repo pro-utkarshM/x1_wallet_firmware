@@ -110,6 +110,6 @@ void sha256_canton(int32_t purpose,
  * CANTON_HASH_SIZE bytes.
  */
 void hash_party_txns(canton_party_txn *party_txns,
-                     int32_t party_txns_count,
+                     uint32_t party_txns_count,
                      uint8_t *hash);
 #endif    // CANTON_TXN_ENCODING_H

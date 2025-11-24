@@ -32,6 +32,7 @@
 #define UI_TEXT_SIGN_TXN_PROMPT "Sign transaction on %s from %s"
 #define UI_TEXT_REVIEW_TXN_PROMPT "Review transaction to %s"
 #define UI_TEXT_SEND_TOKEN_PROMPT "Send \n%s on \n%s"
+#define UI_TEXT_SIGN_TOKEN_TXN_PROMPT "Sign %s \ntransaction on \n%s"
 #define UI_TEXT_BTC_RECEIVER "Receiver #%d"
 #define UI_TEXT_BTC_FEE "Transaction fee"
 #define UI_TEXT_SIGN_PROMPT "Sign %s message on %s from %s"
@@ -76,6 +77,8 @@
 #define UI_TEXT_HOURS "%llu hours "
 #define UI_TEXT_MINS "%llu mins"
 #define UI_TEXT_EXPIRY "Expiry"
+#define UI_TEXT_VERIFY_INSTRUMENT_ID "Verify Token/Instrument ID"
+#define UI_TEXT_VERIFY_INSTRUMENT_ADMIN "Verify Token/Instrument Admin"
 
 // product hash
 extern const char *product_hash;

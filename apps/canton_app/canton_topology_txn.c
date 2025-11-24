@@ -471,8 +471,16 @@ static bool fetch_valid_input(canton_query_t *query) {
   ut_txn->has_party_id = false;
   ut_txn->has_public_key = false;
 
-  // receives all 3 types of topology txns one by one
-  for (int i = 0; i < 3; i++) {
+  uint32_t topology_txns_count =
+      canton_topology_txn_context->init_info.topology_txns_count;
+  if (topology_txns_count < 1 ||
+      topology_txns_count > CANTON_MAX_TOPOLOGY_TXNS_COUNT) {
+    canton_send_error(ERROR_COMMON_ERROR_CORRUPT_DATA_TAG,
+                      ERROR_DATA_FLOW_INVALID_DATA);
+    return false;
+  }
+  // receives all topology_txns_count number of topology txns one by one
+  for (int i = 0; i < topology_txns_count; i++) {
     if (!canton_get_query(query, CANTON_QUERY_SIGN_TOPOLOGY_TXN_TAG) ||
         !check_which_request(query,
                              CANTON_SIGN_TOPOLOGY_TXN_REQUEST_TXN_DATA_TAG)) {
@@ -508,7 +516,7 @@ static bool sign_topology_txn(canton_topology_sig_t *sig) {
 
   uint8_t digest[CANTON_HASH_PREFIX_SIZE + SHA256_DIGEST_LENGTH] = {0};
   hash_party_txns(canton_topology_txn_context->unsigned_topology_txn.party_txns,
-                  CANTON_TOPOLOGY_TXN_PARTY_TXNS_COUNT,
+                  canton_topology_txn_context->init_info.topology_txns_count,
                   digest);
 
   HDNode hdnode = {0};
@@ -520,10 +528,10 @@ static bool sign_topology_txn(canton_topology_sig_t *sig) {
       &hdnode);
 
   // match public key with the public key in the proposal
-  if (!canton_topology_txn_context->unsigned_topology_txn.has_public_key ||
-      memcmp(canton_topology_txn_context->unsigned_topology_txn.public_key,
-             hdnode.public_key + 1,
-             CANTON_PUB_KEY_SIZE) != 0) {
+  if (!canton_topology_txn_context->unsigned_topology_txn.has_party_id ||
+      !verify_party_id(
+          hdnode.public_key + 1,
+          canton_topology_txn_context->unsigned_topology_txn.party_id)) {
     canton_send_error(ERROR_COMMON_ERROR_CORRUPT_DATA_TAG,
                       ERROR_DATA_FLOW_INVALID_DATA);
     memzero(&hdnode, sizeof(hdnode));

@@ -1,15 +1,15 @@
 /**
- * @file    canton_helpers.c
+ * @file    sia_helpers.c
  * @author  Cypherock X1 Team
- * @brief   Utilities specific to Canton chains
- * @copyright Copyright (c) 2024 HODL TECH PTE LTD
+ * @brief   Utilities specific to Sia chains
+ * @copyright Copyright (c) 2025 HODL TECH PTE LTD
  * <br/> You may obtain a copy of license at <a href="https://mitcc.org/"
  *target=_blank>https://mitcc.org/</a>
  *
  ******************************************************************************
  * @attention
  *
- * (c) Copyright 2024 by HODL TECH PTE LTD
+ * (c) Copyright 2025 by HODL TECH PTE LTD
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -60,13 +60,10 @@
  * INCLUDES
  *****************************************************************************/
 
-#include "canton_helpers.h"
+#include "sia_helpers.h"
 
-#include <stddef.h>
-
-#include "canton_context.h"
-#include "coin_utils.h"
-#include "sha2.h"
+#include "sia_context.h"
+#include "utils.h"
 
 /*****************************************************************************
  * EXTERN VARIABLES
@@ -91,13 +88,6 @@
 /*****************************************************************************
  * GLOBAL VARIABLES
  *****************************************************************************/
-// For references to values, check get_party_id function
-static uint8_t CANTON_HASH_PURPOSE[CANTON_HASH_PURPOSE_SIZE] = {0x00,
-                                                                0x00,
-                                                                0x00,
-                                                                0x0c};
-static uint8_t CANTON_HASH_PREFIX[CANTON_HASH_PREFIX_SIZE] = {0x12, 0x20};
-static const char CANTON_PARTY_ID_SEPARATOR[] = "::";
 
 /*****************************************************************************
  * STATIC FUNCTIONS
@@ -107,98 +97,94 @@ static const char CANTON_PARTY_ID_SEPARATOR[] = "::";
  * GLOBAL FUNCTIONS
  *****************************************************************************/
 
-bool canton_derivation_path_guard(const uint32_t *path, uint8_t levels) {
-  bool status = false;
-  if (levels != CANTON_IMPLICIT_ACCOUNT_DEPTH) {
-    return status;
+bool sia_derivation_path_guard(const uint32_t *path, uint8_t levels) {
+  bool status = true;
+  // Sia uses simple index-based derivation, just validate we have exactly 1
+  // level
+  if (levels != SIA_IMPLICIT_ACCOUNT_DEPTH) {
+    status = false;
   }
-
-  uint32_t purpose = path[0], coin = path[1], account = path[2],
-           change = path[3], address = path[4];
-
-  // m/44'/6767'/0'/0'/i'
-  status = (CANTON_PURPOSE_INDEX == purpose && CANTON_COIN_INDEX == coin &&
-            CANTON_ACCOUNT_INDEX == account && CANTON_CHANGE_INDEX == change &&
-            is_hardened(address));
+  uint32_t index = path[0];
+  // It should be a non-negative number
+  if (index < 0) {
+    status = false;
+  }
 
   return status;
 }
 
-void sha256_with_prefix(const uint8_t *data, size_t data_size, uint8_t *hash) {
-  if (!data || !hash || data_size == 0) {
-    return;
-  }
-
-  uint8_t digest[SHA256_DIGEST_LENGTH] = {0};
-  sha256_Raw(data, data_size, digest);
-
-  memcpy(hash, CANTON_HASH_PREFIX, CANTON_HASH_PREFIX_SIZE);
-  memcpy(hash + CANTON_HASH_PREFIX_SIZE, digest, SHA256_DIGEST_LENGTH);
-}
-
-bool get_party_id(const uint8_t *public_key, char *party_id) {
-  if (!public_key || !party_id) {
+bool sia_full_address(const uint8_t *address_hash, char *full_address) {
+  uint8_t checksum[32];
+  if (blake2b(address_hash, 32, checksum, 32) != 0) {
     return false;
   }
 
-  // Ref:
-  // https://docs.digitalasset.com/integrate/devnet/party-management/index.html#choosing-a-party-hint
-  // party_id = party_hint_str + :: + fingerprint_str
-  // party_hint can by anything like "alice", "bob", "my-wallet", etc.
-  // We are using first 5 bytes of sha256_hash(fingerprint) to keep it
-  // deterministic
-  // party_hint = sha256_hash(fingerprint)[:5]
-  // Ref:
-  // https://github.com/hyperledger-labs/splice-wallet-kernel/blob/main/core/ledger-client/src/topology-write-service.ts#L143
-  // Ref:
-  // https://github.com/hyperledger-labs/splice-wallet-kernel/blob/main/core/ledger-client/src/topology-write-service.ts#L62
-  // fingerprint = 0x1220 + sha256(HASH_PURPOSE + public_key)
-  uint8_t party_hint[CANTON_PARTY_HINT_SIZE] = {0};
-  uint8_t fingerprint[CANTON_FINGERPRINT_SIZE] = {0};
-  char party_hint_str[CANTON_PARTY_HINT_STR_SIZE] = {'\0'};
-  char fingerprint_str[CANTON_FINGERPRINT_STR_SIZE] = {'\0'};
-
-  // HASH_PURPOSE + public_key
-  uint8_t hash_buf[CANTON_HASH_PURPOSE_SIZE + CANTON_PUB_KEY_SIZE] = {0};
-  memcpy(hash_buf, CANTON_HASH_PURPOSE, CANTON_HASH_PURPOSE_SIZE);
-  memcpy(hash_buf + CANTON_HASH_PURPOSE_SIZE, public_key, CANTON_PUB_KEY_SIZE);
-
-  sha256_with_prefix(hash_buf, sizeof(hash_buf), fingerprint);
-
-  uint8_t digest[SHA256_DIGEST_LENGTH] = {0};
-  sha256_Raw(fingerprint, CANTON_FINGERPRINT_SIZE, digest);
-  memcpy(party_hint, digest, CANTON_PARTY_HINT_SIZE);
-
-  if (!byte_array_to_hex_string(party_hint,
-                                CANTON_PARTY_HINT_SIZE,
-                                party_hint_str,
-                                CANTON_PARTY_HINT_STR_SIZE)) {
-    return false;
-  }
-  if (!byte_array_to_hex_string(fingerprint,
-                                CANTON_FINGERPRINT_SIZE,
-                                fingerprint_str,
-                                CANTON_FINGERPRINT_STR_SIZE)) {
-    return false;
-  }
-
-  strncpy(party_id, party_hint_str, CANTON_PARTY_HINT_STR_SIZE);
-  strncat(party_id, CANTON_PARTY_ID_SEPARATOR, CANTON_PARTY_ID_SEPARATOR_SIZE);
-  strncat(party_id, fingerprint_str, CANTON_FINGERPRINT_STR_SIZE);
+  byte_array_to_hex_string(address_hash, 32, full_address, 77);
+  byte_array_to_hex_string(checksum, 6, full_address + 64, 13);
 
   return true;
 }
 
-bool verify_party_id(uint8_t *public_key, char *party_id) {
-  if (!public_key || !party_id) {
+bool sia_generate_address(const uint8_t *public_key, char *address) {
+  if (!public_key || !address) {
     return false;
   }
 
-  char derived_party_id[CANTON_PARTY_ID_SIZE] = {0};
-  get_party_id(public_key, derived_party_id);
-  if (strcmp(derived_party_id, party_id) != 0) {
+  // Pre-computed Sia unlock condition hashes
+  uint8_t timelock_hash[32] = {0x51, 0x87, 0xb7, 0xa8, 0x02, 0x1b, 0xf4, 0xf2,
+                               0xc0, 0x04, 0xea, 0x3a, 0x54, 0xcf, 0xec, 0xe1,
+                               0x75, 0x4f, 0x11, 0xc7, 0x62, 0x4d, 0x23, 0x63,
+                               0xc7, 0xf4, 0xcf, 0x4f, 0xdd, 0xd1, 0x44, 0x1e};
+
+  uint8_t sigsrequired_hash[32] = {
+      0xb3, 0x60, 0x10, 0xeb, 0x28, 0x5c, 0x15, 0x4a, 0x8c, 0xd6, 0x30,
+      0x84, 0xac, 0xbe, 0x7e, 0xac, 0x0c, 0x4d, 0x62, 0x5a, 0xb4, 0xe1,
+      0xa7, 0x6e, 0x62, 0x4a, 0x87, 0x98, 0xcb, 0x63, 0x49, 0x7b};
+
+  // Encode public key in Sia format
+
+  uint8_t pubkey_buf[57] = {0};
+  size_t offset = 0;
+  pubkey_buf[offset++] = 0x00;
+  memcpy(pubkey_buf + offset, "ed25519", 7);
+  offset += 7;
+  memset(pubkey_buf + offset, 0, 9);
+  offset += 9;
+  pubkey_buf[offset++] = 32;
+  memset(pubkey_buf + offset, 0, 7);
+  offset += 7;
+  memcpy(pubkey_buf + offset, public_key, 32);
+  offset += 32;
+
+  uint8_t pubkey_hash[32] = {0};
+  if (blake2b(pubkey_buf, sizeof(pubkey_buf), pubkey_hash, 32) != 0) {
     return false;
   }
 
-  return true;
+  // Build Merkle tree: timelock + pubkey
+  uint8_t merkle_buf[65] = {0};
+  merkle_buf[0] = 0x01;
+
+  // Complete tree: (timelock+pubkey) + sigsrequired
+  memcpy(merkle_buf + 1, timelock_hash, 32);
+  memcpy(merkle_buf + 33, pubkey_hash, 32);
+
+  uint8_t intermediate[32] = {0};
+  if (blake2b(merkle_buf, sizeof(merkle_buf), intermediate, 32) != 0) {
+    return false;
+  }
+
+  // Complete tree: (timelock + pubkey) + sigsrequired
+  memset(merkle_buf, 0, sizeof(merkle_buf));
+  merkle_buf[0] = 0x01;
+  memcpy(merkle_buf + 1, intermediate, 32);
+  memcpy(merkle_buf + 33, sigsrequired_hash, 32);
+
+  uint8_t addr[32] = {0};
+  if (blake2b(merkle_buf, sizeof(merkle_buf), addr, 32) != 0) {
+    return false;
+  }
+
+  // Add checksum and convert to hex string
+  return sia_full_address(addr, address);
 }
