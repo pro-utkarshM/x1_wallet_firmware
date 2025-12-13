@@ -100,6 +100,18 @@ const canton_instrument_data_t
           "2"},
          "CBTC",
          10},
+        {{"USDCx",
+          "decentralized-usdc-interchain-rep::"
+          "12208115f1e168dd7e792320be9c4ca720c751a02a3053c7606e1c1cd3dad9bf60e"
+          "f"},
+         "USDCx",
+         10},
+        {{"USDC",
+          "circleDemo_0040circle::"
+          "12201ee3da1c10a0b6ca16692ebe08801476ae2a903435e1719435cbe466e72bbd2"
+          "6"},
+         "CUSD",
+         10},
 };
 
 /*****************************************************************************
