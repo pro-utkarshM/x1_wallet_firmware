@@ -402,12 +402,18 @@ const static char *MERGE_DELEGATION_PROPOSAL_CHOICE_ID =
     "MergeDelegationProposal";
 const static char *MERGE_DELEGATION_CHOICE_ID = "MergeDelegation";
 const static char *CANTON_TRANSFER_INSTRUCTION = "AmuletTransferInstruction";
+const static char *CANTON_TRANSFER_OFFER =
+    "TransferOffer";    // Tokens use TransferOffer; atleast CBTC uses this;
+                        // Verify when supporting other tokens
 const static char *TRANSFER_LABEL = "transfer";
 const static char *SENDER_LABEL = "sender";
 const static char *RECEIVER_LABEL = "receiver";
 const static char *AMOUNT_LABEL = "amount";
 const static char *START_TIME_LABEL = "requestedAt";
 const static char *EXPIRY_TIME_LABEL = "executeBefore";
+const static char *INSTRUMENT_ID_LABEL = "instrumentId";
+const static char *ADMIN_LABEL = "admin";
+const static char *ID_LABEL = "id";
 const static char *DELEGATION_LABEL = "delegation";
 const static char *OWNER_LABEL = "owner";
 
@@ -1698,10 +1704,34 @@ static void parse_display_info_from_transfer_record(
             continue;
           }
           display_info->expiry_time = display_value->timestamp;
+        } else if (strcmp(display_field->label, INSTRUMENT_ID_LABEL) == 0) {
+          if (CANTON_VALUE_RECORD_TAG != display_value->which_sum) {
+            continue;
+          }
+          canton_record_t *instrument_record = display_value->record;
+          for (size_t k = 0; k < instrument_record->fields_count; k++) {
+            canton_record_field_t *instrument_field =
+                &instrument_record->fields[k];
+            canton_value_t *instrument_value = instrument_field->value;
+            if (!instrument_value) {
+              continue;
+            }
+
+            if (strcmp(instrument_field->label, ID_LABEL) == 0) {
+              if (CANTON_VALUE_TEXT_TAG != instrument_value->which_sum) {
+                continue;
+              }
+              strcpy(display_info->instrument.id, instrument_value->text);
+            } else if (strcmp(instrument_field->label, ADMIN_LABEL) == 0) {
+              if (CANTON_VALUE_PARTY_TAG != instrument_value->which_sum) {
+                continue;
+              }
+              strcpy(display_info->instrument.admin, instrument_value->party);
+            }
+          }
         }
 
-        // TODO: Parse other fields as well like instrumentId(maybe to check
-        // the coin/token), meta->memo
+        // TODO: Parse other fields as well like meta->memo
       }
     }
   }
@@ -1748,10 +1778,13 @@ static void parse_display_info(const char *choice_id,
         strcpy(display_info->amount, tap_value->numeric);
       }
     }
-  } else if (strcmp(choice_id, CANTON_TRANSFER_INSTRUCTION) == 0) {
+  } else if (strcmp(choice_id, CANTON_TRANSFER_INSTRUCTION) == 0 ||
+             strcmp(choice_id, CANTON_TRANSFER_OFFER) == 0) {
     // txn is either accept, reject or withdraw
-    if (!record->has_record_id || strcmp(record->record_id.entity_name,
-                                         CANTON_TRANSFER_INSTRUCTION) != 0) {
+    if (!record->has_record_id ||
+        (strcmp(record->record_id.entity_name, CANTON_TRANSFER_INSTRUCTION) !=
+             0 &&
+         strcmp(record->record_id.entity_name, CANTON_TRANSFER_OFFER) != 0)) {
       return;
     }
     parse_display_info_from_transfer_record(record, display_info);

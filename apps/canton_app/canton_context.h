@@ -87,6 +87,11 @@ typedef enum {
 } canton_transaction_type_t;
 
 typedef struct {
+  char id[256];
+  char admin[CANTON_PARTY_ID_STR_SIZE_MAX];
+} canton_instrument_t;
+
+typedef struct {
   canton_transaction_type_t txn_type;
   char sender_party_id[CANTON_PARTY_ID_STR_SIZE_MAX];
   char receiver_party_id[CANTON_PARTY_ID_STR_SIZE_MAX];
@@ -94,7 +99,8 @@ typedef struct {
   uint64_t start_time;
   uint64_t expiry_time;
   char owner_party_id[CANTON_PARTY_ID_STR_SIZE_MAX];
-  // TODO: add more fields if/when required like memo, instrumentId, fee, etc.
+  canton_instrument_t instrument;
+  // TODO: add more fields if/when required like memo, fee, etc.
 } canton_txn_display_info_t;
 
 typedef struct {
