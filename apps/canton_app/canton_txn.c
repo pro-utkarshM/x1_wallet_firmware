@@ -750,31 +750,35 @@ static bool get_user_verification(void) {
   }
 
   canton_instrument_data_t instrument_data = {0};
-  if (!is_instrument_whitelisted(&display_info->instrument, &instrument_data)) {
-    // Instrument Unverifed, Display warning
-    delay_scr_init(ui_text_unverified_token, DELAY_TIME);
+  if (txn_type != CANTON_TXN_TYPE_PREAPPROVAL &&
+      txn_type != CANTON_TXN_TYPE_MERGE_DELEGATION_PROPOSAL) {
+    if (!is_instrument_whitelisted(&display_info->instrument,
+                                   &instrument_data)) {
+      // Instrument Unverifed, Display warning
+      delay_scr_init(ui_text_unverified_token, DELAY_TIME);
 
-    // verify instrument id and admin
-    if (!core_scroll_page(UI_TEXT_VERIFY_INSTRUMENT_ID,
-                          display_info->instrument.id,
-                          canton_send_error) ||
-        !core_scroll_page(UI_TEXT_VERIFY_INSTRUMENT_ADMIN,
-                          display_info->instrument.admin,
-                          canton_send_error)) {
-      return false;
-    }
+      // verify instrument id and admin
+      if (!core_scroll_page(UI_TEXT_VERIFY_INSTRUMENT_ID,
+                            display_info->instrument.id,
+                            canton_send_error) ||
+          !core_scroll_page(UI_TEXT_VERIFY_INSTRUMENT_ADMIN,
+                            display_info->instrument.admin,
+                            canton_send_error)) {
+        return false;
+      }
 
-  } else if (strcmp(display_info->instrument.id, "Amulet") !=
-             0) {    // Only show confirmation for instruments other than
-                     // Amulet(Coin)
-    char msg[100] = "";
-    snprintf(msg,
-             sizeof(msg),
-             UI_TEXT_SIGN_TOKEN_TXN_PROMPT,
-             instrument_data.symbol,
-             CANTON_NAME);
-    if (!core_confirmation(msg, canton_send_error)) {
-      return false;
+    } else if (strcmp(display_info->instrument.id, "Amulet") !=
+               0) {    // Only show confirmation for instruments other than
+                       // Amulet(Coin)
+      char msg[100] = "";
+      snprintf(msg,
+               sizeof(msg),
+               UI_TEXT_SIGN_TOKEN_TXN_PROMPT,
+               instrument_data.symbol,
+               CANTON_NAME);
+      if (!core_confirmation(msg, canton_send_error)) {
+        return false;
+      }
     }
   }
 
