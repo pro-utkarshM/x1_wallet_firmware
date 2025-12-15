@@ -2140,7 +2140,7 @@ void sha256_canton(int32_t purpose,
 }
 
 void hash_party_txns(canton_party_txn *party_txns,
-                     int32_t party_txns_count,
+                     uint32_t party_txns_count,
                      uint8_t *hash) {
   if (!party_txns || !hash || party_txns_count == 0) {
     return;

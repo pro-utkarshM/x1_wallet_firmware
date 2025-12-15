@@ -188,3 +188,17 @@ bool get_party_id(const uint8_t *public_key, char *party_id) {
 
   return true;
 }
+
+bool verify_party_id(uint8_t *public_key, char *party_id) {
+  if (!public_key || !party_id) {
+    return false;
+  }
+
+  char derived_party_id[CANTON_PARTY_ID_SIZE] = {0};
+  get_party_id(public_key, derived_party_id);
+  if (strcmp(derived_party_id, party_id) != 0) {
+    return false;
+  }
+
+  return true;
+}
