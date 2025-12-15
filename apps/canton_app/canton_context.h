@@ -50,7 +50,7 @@
 #define CANTON_INPUT_CONTRACT_HASH_SIZE 8 + SHA256_DIGEST_LENGTH
 #define ENCODED_TXN_LENGTH                                                     \
   ((4 + 1 + SHA256_DIGEST_LENGTH + SHA256_DIGEST_LENGTH))
-#define CANTON_TOPOLOGY_TXN_PARTY_TXNS_COUNT 3
+#define CANTON_MAX_TOPOLOGY_TXNS_COUNT 5
 // TODO: add references to the purpose
 #define CANTON_TOPOLOGY_TXN_HASH_PURPOSE 11
 #define CANTON_MULTI_TOPOLOGY_TXNS_COMBINED_HASH_PURPOSE 55
@@ -121,7 +121,7 @@ typedef struct {
 } canton_party_txn;
 
 typedef struct {
-  canton_party_txn party_txns[CANTON_TOPOLOGY_TXN_PARTY_TXNS_COUNT];
+  canton_party_txn party_txns[CANTON_MAX_TOPOLOGY_TXNS_COUNT];
   bool has_party_id;
   char party_id[CANTON_PARTY_ID_SIZE];
   bool has_public_key;

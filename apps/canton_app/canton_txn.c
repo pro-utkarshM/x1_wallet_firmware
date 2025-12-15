@@ -873,15 +873,6 @@ static bool get_user_verification(void) {
   return true;
 }
 
-static bool verify_party_id(uint8_t *public_key, char *party_id) {
-  char derived_party_id[CANTON_PARTY_ID_SIZE] = {0};
-  get_party_id(public_key, derived_party_id);
-  if (strcmp(derived_party_id, party_id) != 0) {
-    return false;
-  }
-  return true;
-}
-
 static bool sign_txn(canton_sig_t *sig) {
   uint8_t seed[64] = {0};
   if (!reconstruct_seed(
