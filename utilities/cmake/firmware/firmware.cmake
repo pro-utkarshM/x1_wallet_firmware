@@ -68,6 +68,7 @@ target_include_directories(${EXECUTABLE} PRIVATE
         apps/stellar_app
         apps/sia_app
         apps/canton_app
+
         src/
         src/menu
         src/wallet
@@ -123,7 +124,9 @@ target_include_directories(${EXECUTABLE} PRIVATE
         common/coin_support/eth_sign_data
         common/coin_support/tron_parse_txn
         common/flash
-        common/Firewall common/core common/timers
+        common/Firewall
+        common/core
+        common/timers
 
         common
         common/lvgl
