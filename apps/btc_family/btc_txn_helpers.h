@@ -21,6 +21,17 @@
 #define EXPECTED_SCRIPT_SIG_SIZE 106
 #define CHUNK_SIZE 2048
 
+#define DEFAULT_SEQUENCE 0xffffffff
+#define SIGHASH_DEFAULT 0x00
+#define SIGHASH_ALL 0x01
+#define SIGHASH_NONE 0x02
+#define SIGHASH_SINGLE 0x03
+#define SIGHASH_ANYONECANPAY 0x80
+#define SIGHASH_OUTPUT_MASK 0x03
+#define SIGHASH_INPUT_MASK 0x80
+#define ADVANCED_TRANSACTION_MARKER 0x00
+#define ADVANCED_TRANSACTION_FLAG 0x01
+
 /*****************************************************************************
  * TYPEDEFS
  *****************************************************************************/
@@ -103,7 +114,8 @@ bool btc_digest_input(const btc_txn_context_t *context,
  * @details The function fills the calculated cache for taproot transactions.
  * The cache consists of pre-computed hashes needed for signing taproot inputs.
  *
- * @param context Reference to the context for the current transaction to be signed
+ * @param context Reference to the context for the current transaction to be
+ * signed
  */
 void btc_taproot_init_cache(btc_txn_context_t *context);
 
