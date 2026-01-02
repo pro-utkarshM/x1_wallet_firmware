@@ -327,7 +327,10 @@ bool bip340_tweak_public_key(const uint8_t *public_key,
 }
 
 // BIP341 private key tweaking for Taproot
-bool bip340_tweak_private_key(const uint8_t *private_key, const uint8_t *public_key, const uint8_t *root_hash, uint8_t *tweaked_private_key) {
+bool bip340_tweak_private_key(const uint8_t *private_key,
+                              const uint8_t *public_key,
+                              const uint8_t *root_hash,
+                              uint8_t *tweaked_private_key) {
   if (NULL == private_key || NULL == tweaked_private_key) {
     return false;
   }
@@ -338,14 +341,27 @@ bool bip340_tweak_private_key(const uint8_t *private_key, const uint8_t *public_
     return false;
   }
 
-  // Compute tweaked private key: sk' = sk + t (mod n)
   bignum256 sk, t, result;
   bn_read_be(private_key, &sk);
-  bn_read_be(tweak_hash, &t);
-  bn_mod(&t, &secp256k1.order);
+  const ecdsa_curve *curve = &secp256k1;
+  curve_point public_key_point = {0};
+  if (!ecdsa_read_pubkey(curve, public_key, &public_key_point)) {
+    core_confirmation("read pubkey failed", NULL);
+    return false;
+  }
 
-  bn_addmod(&sk, &t, &secp256k1.order);
+  // Negate private key if public key y is odd
+  if (bn_is_odd(&public_key_point.y)) {
+    bn_subtract(&curve->order, &sk, &sk);
+    bn_mod(&sk, &curve->order);
+  }
+
+  // Compute tweaked private key: sk' = sk + t (mod n)
+  bn_read_be(tweak_hash, &t);
+  bn_mod(&t, &curve->order);
   bn_copy(&sk, &result);
+  bn_add(&result, &t);
+  bn_mod(&result, &curve->order);
 
   bn_write_be(&result, tweaked_private_key);
 

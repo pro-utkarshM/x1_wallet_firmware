@@ -705,6 +705,16 @@ int schnorrsig_sign32_taproot(const uint8_t *private_key,
   // For Taproot, we need to compute the tweaked private key
   uint8_t tweaked_private_key[32] = {0};
   uint8_t tweaked_public_key[32] = {0};
+  bignum256 sk = {0}, e = {0}, k = {0}, s = {0};
+  curve_point R = {0}, P = {0};
+  uint8_t aux[32] = {0};                          // Use zero auxiliary data
+  uint8_t aux_hash[32] = {0};                     // Use zero auxiliary data
+  uint8_t nonce_data[32 + 32 + 32 + 32] = {0};    // sk || P.x || msg || aux
+  uint8_t nonce_hash[32] = {0};
+  uint8_t challenge_data[32 + 32 + 32] = {0};    // R.x || P.x || msg
+  uint8_t challenge_hash[32] = {0};
+
+  const ecdsa_curve *curve = &secp256k1;
 
   // Compute tweaked public key first
   if (!bip340_tweak_public_key(public_key, NULL, tweaked_public_key)) {
@@ -719,47 +729,42 @@ int schnorrsig_sign32_taproot(const uint8_t *private_key,
     return -1;
   }
 
-  bignum256 sk, e, k, s;
-  curve_point R, P;
-  uint8_t aux[32] = {0};                    // Use zero auxiliary data
-  uint8_t nonce_data[32 + 32 + 32 + 32];    // sk || P.x || msg || aux
-  uint8_t nonce_hash[32];
-  uint8_t challenge_data[32 + 32 + 32];    // R.x || P.x || msg
-  uint8_t challenge_hash[32];
-
   // 1. Load and validate private key
   bn_read_be(tweaked_private_key, &sk);
-  if (bn_is_zero(&sk) || !bn_is_less(&sk, &secp256k1.order)) {
+  if (bn_is_zero(&sk) || !bn_is_less(&sk, &curve->order)) {
     core_confirmation("invalid private key", NULL);
     return -1;
   }
 
-  // 2. Load public key and check if Y is even
-  bn_read_be(tweaked_public_key, &P.x);
-  // For BIP340, we assume the public key has even Y (lift_x will determine
-  // this) We'll adjust the private key if needed after determining Y parity
-
-  // 3. Determine Y parity and adjust private key if needed
-  // For now, we'll assume even Y and let the signature process handle it
+  uint8_t tweaked_public_key2[33] = {0};
+  ecdsa_get_public_key33(&secp256k1, tweaked_private_key, tweaked_public_key2);
+  if (tweaked_public_key2[0] == 0x03) {
+    bn_subtract(&curve->order, &sk, &sk);
+    bn_mod(&sk, &curve->order);
+  }
 
   // 4. Generate deterministic nonce k (BIP340)
   // First, XOR auxiliary data with private key for additional randomness
+  // generate random aux data
+  random_generate(aux, 32);
+  bip340_tagged_hash("BIP0340/aux", aux_hash, aux, 32);
+
   uint8_t sk_bytes[32];
   bn_write_be(&sk, sk_bytes);
   for (int i = 0; i < 32; i++) {
-    sk_bytes[i] ^= aux[i];
+    sk_bytes[i] ^= aux_hash[i];
   }
 
   // Build nonce input: sk || P.x || msg || aux
   memcpy(nonce_data, sk_bytes, 32);
   memcpy(nonce_data + 32, tweaked_public_key, 32);
   memcpy(nonce_data + 64, digest, 32);
-  memcpy(nonce_data + 96, aux, 32);
+  // memcpy(nonce_data + 96, aux, 32);
 
   // Generate nonce
-  bip340_tagged_hash("BIP0340/nonce", nonce_hash, nonce_data, 128);
+  bip340_tagged_hash("BIP0340/nonce", nonce_hash, nonce_data, 96);
   bn_read_be(nonce_hash, &k);
-  bn_mod(&k, &secp256k1.order);
+  bn_mod(&k, &curve->order);
 
   // Ensure k != 0
   if (bn_is_zero(&k)) {
@@ -768,15 +773,15 @@ int schnorrsig_sign32_taproot(const uint8_t *private_key,
   }
 
   // 5. Calculate R = k*G
-  scalar_multiply(&secp256k1, &k, &R);
+  scalar_multiply(curve, &k, &R);
 
   // 6. Convert R to affine coordinates (curve_point is already in affine form)
   // No need to convert from projective coordinates
 
   // 7. If R.y is odd, negate k
   if (bn_is_odd(&R.y)) {
-    bn_subtract(&secp256k1.order, &k, &k);
-    bn_mod(&k, &secp256k1.order);
+    bn_subtract(&curve->order, &k, &k);
+    bn_mod(&k, &curve->order);
   }
 
   // 8. Store R.x in signature (first 32 bytes)
@@ -790,16 +795,24 @@ int schnorrsig_sign32_taproot(const uint8_t *private_key,
   // Generate challenge e
   bip340_tagged_hash("BIP0340/challenge", challenge_hash, challenge_data, 96);
   bn_read_be(challenge_hash, &e);
-  bn_mod(&e, &secp256k1.order);
+  // bn_mod(&e, &curve->order);
 
   // 10. Calculate s = k + e*sk mod n
-  bignum256 temp;
-  bn_multiply(&e, &sk, &secp256k1.order);    // temp = e*sk mod n
-  bn_addmod(&k, &temp, &secp256k1.order);    // s = k + e*sk mod n
-  bn_copy(&k, &s);
+  bignum256 temp, temp2;
+  bn_copy(&sk, &temp);
+  bn_multiply(&e, &temp, &curve->order);    // temp = e*sk mod n
+  bn_copy(&k, &temp2);
+  bn_add(&temp2, &temp);    // s = k + e*sk mod n
+  bn_mod(&temp2, &curve->order);
+  bn_copy(&temp2, &s);
 
   // 11. Store s in signature (second 32 bytes)
   bn_write_be(&s, signature_bytes + 32);
+
+  char signature_str[64 * 2 + 1] = {0};
+  byte_array_to_hex_string(
+      signature_bytes, 64, signature_str, sizeof(signature_str));
+  core_scroll_page("signature", signature_str, NULL);
 
   // Clear all sensitive data
   memzero(&tweaked_private_key, sizeof(tweaked_private_key));
