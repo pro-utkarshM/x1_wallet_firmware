@@ -68,9 +68,7 @@
 #include "bignum.h"
 #include "btc_helpers.h"
 #include "btc_script.h"
-#include "hasher.h"
 #include "secp256k1.h"
-#include "ui_core_confirm.h"
 #include "utils.h"
 
 /*****************************************************************************
@@ -451,11 +449,6 @@ STATIC bool calculate_p2tr_digest(const btc_txn_context_t *context,
   (leafHash ? 37 : 0);
   */
 
-  char buffer_str[len * 2 + 1];
-  memzero(buffer_str, sizeof(buffer_str));
-  byte_array_to_hex_string(buffer, len, buffer_str, sizeof(buffer_str));
-  core_scroll_page("buffer", buffer_str, NULL);
-
   // compute message hash
   uint8_t temp_buffer[400] = {0};
   memcpy(temp_buffer,
@@ -469,6 +462,122 @@ STATIC bool calculate_p2tr_digest(const btc_txn_context_t *context,
              len + (sizeof(TAP_SIG_HASH) / sizeof(TAP_SIG_HASH[0])),
              digest);
   return true;
+}
+
+/// Ref:
+/// https://github.com/bitcoin/bips/blob/master/bip-0340.mediawiki#default-signing
+STATIC int schnorrsig_sign(const uint8_t *tweaked_private_key,
+                           const uint8_t *aux,
+                           const uint8_t *digest,
+                           uint8_t *signature_bytes) {
+  uint8_t tweaked_public_key[33] = {0};
+  bignum256 sk = {0};
+  bignum256 e = {0};
+  bignum256 k = {0};
+  bignum256 s = {0};
+  curve_point R = {0};
+  curve_point P = {0};
+  uint8_t aux_hash[32] = {0};                // Use zero auxiliary data
+  uint8_t nonce_data[32 + 32 + 32] = {0};    // sk || P.x || msg
+  uint8_t nonce_hash[32] = {0};
+  uint8_t challenge_data[32 + 32 + 32] = {0};    // R.x || P.x || msg
+  uint8_t challenge_hash[32] = {0};
+
+  const ecdsa_curve *curve = &secp256k1;
+
+  // Load and validate private key
+  bn_read_be(tweaked_private_key, &sk);
+  if (bn_is_zero(&sk) || !bn_is_less(&sk, &curve->order)) {
+    return -1;
+  }
+
+  // Get public key
+  ecdsa_get_public_key33(&secp256k1, tweaked_private_key, tweaked_public_key);
+
+  // Negate private key if public key y is odd
+  if (tweaked_public_key[0] == 0x03) {
+    bn_subtract(&curve->order, &sk, &sk);
+    bn_mod(&sk, &curve->order);
+  }
+
+  // Generate deterministic nonce k (BIP340)
+  // First, XOR auxiliary data hash with private key bytes for additional
+  // randomness
+  bip340_tagged_hash("BIP0340/aux", aux_hash, aux, 32);
+
+  uint8_t sk_bytes[32];
+  bn_write_be(&sk, sk_bytes);
+  for (int i = 0; i < 32; i++) {
+    sk_bytes[i] ^= aux_hash[i];
+  }
+
+  // Build nonce input: sk || P.x || msg || aux
+  memcpy(nonce_data, sk_bytes, 32);
+  memcpy(nonce_data + 32, tweaked_public_key + 1, 32);
+  memcpy(nonce_data + 64, digest, 32);
+
+  // Generate nonce
+  bip340_tagged_hash("BIP0340/nonce", nonce_hash, nonce_data, 96);
+  bn_read_be(nonce_hash, &k);
+  bn_mod(&k, &curve->order);
+
+  // Ensure k != 0
+  if (bn_is_zero(&k)) {
+    return -1;
+  }
+
+  // Calculate R = k * G
+  scalar_multiply(curve, &k, &R);
+
+  // Negate k if R.y is odd
+  if (bn_is_odd(&R.y)) {
+    bn_subtract(&curve->order, &k, &k);
+    bn_mod(&k, &curve->order);
+  }
+
+  // Store R.x in signature (first 32 bytes)
+  bn_write_be(&R.x, signature_bytes);
+
+  // Calculate e = tagged_hash("BIP0340/challenge", R.x || P.x || m)
+  memcpy(challenge_data, signature_bytes, 32);                // R.x
+  memcpy(challenge_data + 32, tweaked_public_key + 1, 32);    // P.x
+  memcpy(challenge_data + 64, digest, 32);                    // message
+
+  // Generate challenge e
+  bip340_tagged_hash("BIP0340/challenge", challenge_hash, challenge_data, 96);
+  bn_read_be(challenge_hash, &e);
+
+  // Calculate s = k + e * sk mod n
+  bignum256 e_sk = {0};
+  bignum256 result = {0};
+  bn_copy(&sk, &e_sk);
+  bn_multiply(&e, &e_sk, &curve->order);    // e_sk = e*sk mod n
+  bn_copy(&k, &result);
+  bn_add(&result, &e_sk);    // result = k + e_sk mod n
+  bn_mod(&result, &curve->order);
+  bn_copy(&result, &s);
+
+  // Store s in signature (second 32 bytes)
+  bn_write_be(&s, signature_bytes + 32);
+
+  // Clear all sensitive data
+  memzero(&tweaked_public_key, sizeof(tweaked_public_key));
+  memzero(&sk, sizeof(sk));
+  memzero(&k, sizeof(k));
+  memzero(&e, sizeof(e));
+  memzero(&e_sk, sizeof(e_sk));
+  memzero(&result, sizeof(result));
+  memzero(&s, sizeof(s));
+  memzero(&R, sizeof(R));
+  memzero(&P, sizeof(P));
+  memzero(sk_bytes, sizeof(sk_bytes));
+  memzero(aux_hash, sizeof(aux_hash));
+  memzero(nonce_data, sizeof(nonce_data));
+  memzero(nonce_hash, sizeof(nonce_hash));
+  memzero(challenge_data, sizeof(challenge_data));
+  memzero(challenge_hash, sizeof(challenge_hash));
+
+  return 0;
 }
 
 /*****************************************************************************
@@ -624,79 +733,6 @@ bool btc_digest_input(const btc_txn_context_t *context,
   return status;
 }
 
-// typedef struct {
-//   uint8_t secret_key[32];    // Private key
-//   uint8_t public_key[32];    // X-coordinate of public key (for BIP340)
-//   uint8_t has_even_y;        // Whether Y-coordinate is even
-// } bip340_keypair_t;
-
-// int keypair_create(bip340_keypair_t *keypair, const uint8_t
-// *private_key_bytes) {
-//     // 1. Validate private key (must be in range [1, n-1])
-//     bignum256 sk;
-//     bn_read_be(private_key_bytes, &sk);
-
-//     // Check if sk is valid (not zero and less than curve order)
-//     if (bn_is_zero(&sk)) {
-//         return -1;
-//     }
-
-//     if (!bn_is_less(&sk, &secp256k1.order)) {
-//         return -1;
-//     }
-
-//     // 2. Copy private key
-//     memcpy(keypair->secret_key, private_key_bytes, 32);
-
-//     // 3. Calculate public key: P = sk * G
-//     curve_point pub;
-//     scalar_multiply(&secp256k1, &sk, &pub);
-
-//     // 4. Convert to affine coordinates and get x-coordinate
-//     bignum256 x, y;
-//     bn_inverse(&pub.z, &secp256k1.prime);
-//     bignum256 z_squared;
-//     bn_multiply(&pub.z, &pub.z, &secp256k1.prime);
-//     bn_multiply(&pub.x, &z_squared, &secp256k1.prime);
-//     bn_mod(&pub.x, &secp256k1.prime);
-
-//     // Store x-coordinate
-//     bn_write_be(&pub.x, keypair->public_key);
-
-//     // 5. Check if Y is even (needed for BIP340)
-//     bn_multiply(&pub.z, &z_squared, &secp256k1.prime);
-//     bn_multiply(&pub.y, &pub.z, &secp256k1.prime);
-//     bn_mod(&pub.y, &secp256k1.prime);
-//     keypair->has_even_y = !bn_is_odd(&pub.y);
-
-//     // Clear sensitive data
-//     memzero(&sk, sizeof(sk));
-//     memzero(&pub, sizeof(pub));
-
-//     return 0;
-// }
-
-// BIP340 tagged hash implementation
-void bip340_tagged_hash(const char *tag,
-                        uint8_t *out,
-                        const uint8_t *data,
-                        size_t data_len) {
-  uint8_t tag_hash[32];
-  Hasher hasher;
-
-  // Hash the tag
-  hasher_Init(&hasher, HASHER_SHA2);
-  hasher_Update(&hasher, (const uint8_t *)tag, strlen(tag));
-  hasher_Final(&hasher, tag_hash);
-
-  // tagged_hash = SHA256(SHA256(tag) || SHA256(tag) || data)
-  hasher_Init(&hasher, HASHER_SHA2);
-  hasher_Update(&hasher, tag_hash, 32);
-  hasher_Update(&hasher, tag_hash, 32);
-  hasher_Update(&hasher, data, data_len);
-  hasher_Final(&hasher, out);
-}
-
 // BIP340 Schnorr signature for Taproot with tweaked private key
 int schnorrsig_sign32_taproot(const uint8_t *private_key,
                               const uint8_t *public_key,
@@ -704,130 +740,22 @@ int schnorrsig_sign32_taproot(const uint8_t *private_key,
                               uint8_t *signature_bytes) {
   // For Taproot, we need to compute the tweaked private key
   uint8_t tweaked_private_key[32] = {0};
-  uint8_t tweaked_public_key[32] = {0};
-  bignum256 sk = {0}, e = {0}, k = {0}, s = {0};
-  curve_point R = {0}, P = {0};
-  uint8_t aux[32] = {0};                          // Use zero auxiliary data
-  uint8_t aux_hash[32] = {0};                     // Use zero auxiliary data
-  uint8_t nonce_data[32 + 32 + 32 + 32] = {0};    // sk || P.x || msg || aux
-  uint8_t nonce_hash[32] = {0};
-  uint8_t challenge_data[32 + 32 + 32] = {0};    // R.x || P.x || msg
-  uint8_t challenge_hash[32] = {0};
-
-  const ecdsa_curve *curve = &secp256k1;
-
-  // Compute tweaked public key first
-  if (!bip340_tweak_public_key(public_key, NULL, tweaked_public_key)) {
-    core_confirmation("invalid public key", NULL);
-    return -1;
-  }
+  uint8_t aux[32] = {0};    // Use zero auxiliary data
 
   // Compute tweaked private key
   if (!bip340_tweak_private_key(
           private_key, public_key, NULL, tweaked_private_key)) {
-    core_confirmation("invalid private key", NULL);
     return -1;
   }
 
-  // 1. Load and validate private key
-  bn_read_be(tweaked_private_key, &sk);
-  if (bn_is_zero(&sk) || !bn_is_less(&sk, &curve->order)) {
-    core_confirmation("invalid private key", NULL);
-    return -1;
-  }
-
-  uint8_t tweaked_public_key2[33] = {0};
-  ecdsa_get_public_key33(&secp256k1, tweaked_private_key, tweaked_public_key2);
-  if (tweaked_public_key2[0] == 0x03) {
-    bn_subtract(&curve->order, &sk, &sk);
-    bn_mod(&sk, &curve->order);
-  }
-
-  // 4. Generate deterministic nonce k (BIP340)
-  // First, XOR auxiliary data with private key for additional randomness
   // generate random aux data
   random_generate(aux, 32);
-  bip340_tagged_hash("BIP0340/aux", aux_hash, aux, 32);
 
-  uint8_t sk_bytes[32];
-  bn_write_be(&sk, sk_bytes);
-  for (int i = 0; i < 32; i++) {
-    sk_bytes[i] ^= aux_hash[i];
-  }
+  int result =
+      schnorrsig_sign(tweaked_private_key, aux, digest, signature_bytes);
 
-  // Build nonce input: sk || P.x || msg || aux
-  memcpy(nonce_data, sk_bytes, 32);
-  memcpy(nonce_data + 32, tweaked_public_key, 32);
-  memcpy(nonce_data + 64, digest, 32);
-  // memcpy(nonce_data + 96, aux, 32);
+  memzero(tweaked_private_key, sizeof(tweaked_private_key));
+  memzero(aux, sizeof(aux));
 
-  // Generate nonce
-  bip340_tagged_hash("BIP0340/nonce", nonce_hash, nonce_data, 96);
-  bn_read_be(nonce_hash, &k);
-  bn_mod(&k, &curve->order);
-
-  // Ensure k != 0
-  if (bn_is_zero(&k)) {
-    core_confirmation("invalid nonce", NULL);
-    return -1;
-  }
-
-  // 5. Calculate R = k*G
-  scalar_multiply(curve, &k, &R);
-
-  // 6. Convert R to affine coordinates (curve_point is already in affine form)
-  // No need to convert from projective coordinates
-
-  // 7. If R.y is odd, negate k
-  if (bn_is_odd(&R.y)) {
-    bn_subtract(&curve->order, &k, &k);
-    bn_mod(&k, &curve->order);
-  }
-
-  // 8. Store R.x in signature (first 32 bytes)
-  bn_write_be(&R.x, signature_bytes);
-
-  // 9. Calculate e = tagged_hash("BIP0340/challenge", R.x || P.x || m)
-  memcpy(challenge_data, signature_bytes, 32);            // R.x
-  memcpy(challenge_data + 32, tweaked_public_key, 32);    // P.x
-  memcpy(challenge_data + 64, digest, 32);                // message
-
-  // Generate challenge e
-  bip340_tagged_hash("BIP0340/challenge", challenge_hash, challenge_data, 96);
-  bn_read_be(challenge_hash, &e);
-  // bn_mod(&e, &curve->order);
-
-  // 10. Calculate s = k + e*sk mod n
-  bignum256 temp, temp2;
-  bn_copy(&sk, &temp);
-  bn_multiply(&e, &temp, &curve->order);    // temp = e*sk mod n
-  bn_copy(&k, &temp2);
-  bn_add(&temp2, &temp);    // s = k + e*sk mod n
-  bn_mod(&temp2, &curve->order);
-  bn_copy(&temp2, &s);
-
-  // 11. Store s in signature (second 32 bytes)
-  bn_write_be(&s, signature_bytes + 32);
-
-  char signature_str[64 * 2 + 1] = {0};
-  byte_array_to_hex_string(
-      signature_bytes, 64, signature_str, sizeof(signature_str));
-  core_scroll_page("signature", signature_str, NULL);
-
-  // Clear all sensitive data
-  memzero(&tweaked_private_key, sizeof(tweaked_private_key));
-  memzero(&tweaked_public_key, sizeof(tweaked_public_key));
-  memzero(&sk, sizeof(sk));
-  memzero(&k, sizeof(k));
-  memzero(&e, sizeof(e));
-  memzero(&s, sizeof(s));
-  memzero(&R, sizeof(R));
-  memzero(&P, sizeof(P));
-  memzero(sk_bytes, sizeof(sk_bytes));
-  memzero(nonce_data, sizeof(nonce_data));
-  memzero(nonce_hash, sizeof(nonce_hash));
-  memzero(challenge_data, sizeof(challenge_data));
-  memzero(challenge_hash, sizeof(challenge_hash));
-
-  return 0;
+  return result;
 }

@@ -73,7 +73,6 @@
 #include "secp256k1.h"
 #include "segwit_addr.h"
 #include "sha2.h"
-#include "ui_core_confirm.h"
 #include "utils.h"
 
 /*****************************************************************************
@@ -95,12 +94,6 @@
 /*****************************************************************************
  * STATIC VARIABLES
  *****************************************************************************/
-// sha256("TapTweak") used in BIP-340
-// This is used to derive the taproot address
-static const uint8_t tap_tweak_hash[32] = {
-    232, 15,  225, 99,  156, 156, 160, 80,  227, 175, 27,
-    57,  193, 67,  198, 62,  66,  156, 188, 235, 21,  217,
-    64,  251, 181, 197, 161, 244, 175, 87,  197, 233};
 
 /*****************************************************************************
  * GLOBAL VARIABLES
@@ -119,8 +112,7 @@ static bool bip340_tweak_key_hash(const uint8_t *x_only_public_key,
     return false;
   }
 
-  size_t payload_size =
-      32 * 3;    // tap_tweak_hash + tap_tweak_hash + x_only_public_key
+  size_t payload_size = 32;    // x_only_public_key
   if (root_hash != NULL) {
     payload_size += 32;
   }
@@ -128,14 +120,12 @@ static bool bip340_tweak_key_hash(const uint8_t *x_only_public_key,
   uint8_t payload[payload_size];
   memzero(payload, payload_size);
   // Prepare the data for hashing
-  memcpy(payload, tap_tweak_hash, 32);
-  memcpy(payload + 32, tap_tweak_hash, 32);
-  memcpy(payload + 64, x_only_public_key, 32);
+  memcpy(payload, x_only_public_key, 32);
   if (root_hash != NULL) {
-    memcpy(payload + 32 * 3, root_hash, 32);
+    memcpy(payload + 32, root_hash, 32);
   }
 
-  sha256_Raw(payload, payload_size, tweak_key_hash);
+  bip340_tagged_hash("TapTweak", tweak_key_hash, payload, payload_size);
   return true;
 }
 
@@ -145,13 +135,11 @@ static bool bip340_point_add_tweak(const ecdsa_curve *curve,
                                    const uint8_t *tweak_key_hash,
                                    uint8_t result[32]) {
   if (NULL == public_key || NULL == tweak_key_hash || NULL == result) {
-    core_confirmation("NULL public key", NULL);
     return false;
   }
 
   curve_point public_key_point = {0};
   if (!ecdsa_read_pubkey(curve, public_key, &public_key_point)) {
-    core_confirmation("read pubkey failed", NULL);
     return false;
   }
 
@@ -161,12 +149,11 @@ static bool bip340_point_add_tweak(const ecdsa_curve *curve,
     bn_mod(&public_key_point.y, &curve->prime);
   }
 
-  bignum256 tweak_hash_bn;
+  bignum256 tweak_hash_bn = {0};
   bn_read_be(tweak_key_hash, &tweak_hash_bn);
   bn_mod(&tweak_hash_bn, &curve->order);
 
   if (bn_is_zero(&tweak_hash_bn)) {
-    core_confirmation("tweak hash is zero", NULL);
     return false;
   }
 
@@ -301,25 +288,43 @@ void format_value(const uint64_t value_in_sat,
       msg, msg_len, "%0.*f %s", precision, fee_in_btc, g_btc_app->lunit_name);
 }
 
+// BIP340 tagged hash implementation
+void bip340_tagged_hash(const char *tag,
+                        uint8_t *out,
+                        const uint8_t *data,
+                        size_t data_len) {
+  uint8_t tag_hash[32];
+  Hasher hasher;
+
+  // Hash the tag
+  hasher_Init(&hasher, HASHER_SHA2);
+  hasher_Update(&hasher, (const uint8_t *)tag, strlen(tag));
+  hasher_Final(&hasher, tag_hash);
+
+  // tagged_hash = SHA256(SHA256(tag) || SHA256(tag) || data)
+  hasher_Init(&hasher, HASHER_SHA2);
+  hasher_Update(&hasher, tag_hash, 32);
+  hasher_Update(&hasher, tag_hash, 32);
+  hasher_Update(&hasher, data, data_len);
+  hasher_Final(&hasher, out);
+}
+
 // implementation of BIP-340 tweak public key for taproot without using
 // secp256k1 library
 bool bip340_tweak_public_key(const uint8_t *public_key,
                              const uint8_t *root_hash,
                              uint8_t *tweaked_public_key) {
   if (NULL == public_key || NULL == tweaked_public_key) {
-    core_confirmation("NULL public key", NULL);
     return false;
   }
 
   uint8_t tweak_key_hash[32] = {0};
   if (!bip340_tweak_key_hash(public_key + 1, root_hash, tweak_key_hash)) {
-    core_confirmation("tweak key hash failed", NULL);
     return false;
   }
 
   if (!bip340_point_add_tweak(
           &secp256k1, public_key, tweak_key_hash, tweaked_public_key)) {
-    core_confirmation("point add tweak failed", NULL);
     return false;
   }
 
@@ -341,12 +346,11 @@ bool bip340_tweak_private_key(const uint8_t *private_key,
     return false;
   }
 
-  bignum256 sk, t, result;
+  bignum256 sk = {0}, t = {0}, result = {0};
   bn_read_be(private_key, &sk);
   const ecdsa_curve *curve = &secp256k1;
   curve_point public_key_point = {0};
   if (!ecdsa_read_pubkey(curve, public_key, &public_key_point)) {
-    core_confirmation("read pubkey failed", NULL);
     return false;
   }
 

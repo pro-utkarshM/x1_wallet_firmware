@@ -709,17 +709,12 @@ static bool sign_input(scrip_sig_t *signatures) {
 
     status = btc_digest_input(btc_txn_context, idx, buffer);
     if (PURPOSE_TAPROOT == hd_path[0]) {
-      char buffer_str[65] = {'\0'};
-      byte_array_to_hex_string(buffer, 32, buffer_str, sizeof(buffer_str));
-      core_scroll_page("buffer", buffer_str, btc_send_error);
-      core_confirmation("schnorrsig_sign32_taproot started", btc_send_error);
       // Sign with Schnorr signature
       if (schnorrsig_sign32_taproot(t_node.private_key,
                                     t_node.public_key,
                                     buffer,
                                     signatures[idx].bytes) != 0) {
         status = false;
-        core_confirmation("schnorrsig_sign32_taproot failed", btc_send_error);
         break;
       }
       // add public key to the signature
@@ -727,7 +722,6 @@ static bool sign_input(scrip_sig_t *signatures) {
 
       // Taproot signatures are 64 bytes (no script sig encoding needed)
       signatures[idx].size = 64 + 33;
-      core_confirmation("schnorrsig_sign32_taproot ended", btc_send_error);
     } else {
       ecdsa_sign_digest(
           curve, t_node.private_key, buffer, signatures[idx].bytes, NULL, NULL);
@@ -748,7 +742,6 @@ static bool sign_input(scrip_sig_t *signatures) {
 }
 
 static bool send_script_sig(btc_query_t *query, const scrip_sig_t *sigs) {
-  core_confirmation("send_script_sig started", btc_send_error);
   btc_result_t result = init_btc_result(BTC_RESULT_SIGN_TXN_TAG);
   result.sign_txn.which_response = BTC_SIGN_TXN_RESPONSE_SIGNATURE_TAG;
 
@@ -761,7 +754,6 @@ static bool send_script_sig(btc_query_t *query, const scrip_sig_t *sigs) {
         &result.sign_txn.signature.signature, &sigs[idx], sizeof(scrip_sig_t));
     btc_send_result(&result);
   }
-  core_confirmation("send_script_sig ended", btc_send_error);
   return true;
 }
 

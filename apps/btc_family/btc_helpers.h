@@ -193,4 +193,17 @@ bool bip340_tweak_public_key(const uint8_t *public_key,
                              const uint8_t *root_hash,
                              uint8_t *tweaked_public_key);
 
+/**
+ * @brief BIP340 tagged hash implementation
+ * @details This function implements BIP340 tagged hash for Taproot.
+ *
+ * @param tag The tag to be hashed
+ * @param out The output buffer for the hashed data
+ * @param data The data to be hashed
+ * @param data_len The length of the data
+ */
+void bip340_tagged_hash(const char *tag,
+                        uint8_t *out,
+                        const uint8_t *data,
+                        size_t data_len);
 #endif
