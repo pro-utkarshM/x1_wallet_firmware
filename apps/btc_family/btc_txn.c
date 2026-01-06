@@ -662,10 +662,13 @@ static bool sign_input(scrip_sig_t *signatures) {
 
   // populate hashes cache for segwit transaction types
   btc_segwit_init_cache(btc_txn_context);
-  // populate hashes cache for taproot transaction types
-  btc_taproot_init_cache(btc_txn_context);
 
   const uint32_t *hd_path = btc_txn_context->init_info.derivation_path;
+  if (PURPOSE_TAPROOT == hd_path[0]) {
+    // populate hashes cache for taproot transaction types
+    btc_taproot_init_cache(btc_txn_context);
+  }
+
   const ecdsa_curve *curve = get_curve_by_name(SECP256K1_NAME)->params;
   if (!reconstruct_seed(
           btc_txn_context->init_info.wallet_id, buffer, btc_send_error)) {
