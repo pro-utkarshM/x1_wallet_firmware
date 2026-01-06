@@ -1,4 +1,3 @@
-
 enable_language(C ASM)
 set(EXECUTABLE ${PROJECT_NAME}.elf)
 set(LINKER_SCRIPT STM32L486RGTX_FLASH.ld)
@@ -55,6 +54,8 @@ target_include_directories(${EXECUTABLE} PRIVATE
         apps/evm_family/avalanche
         apps/evm_family/optimism
         apps/evm_family/arbitrum
+        apps/evm_family/hyperliquid
+        apps/evm_family/base
         apps/near_app
         apps/solana_app
         apps/tron_app
@@ -64,7 +65,10 @@ target_include_directories(${EXECUTABLE} PRIVATE
         apps/constellation_app
         apps/icp_app
         apps/exchange_app
-        
+        apps/stellar_app
+        apps/sia_app
+        apps/canton_app
+
         src/
         src/menu
         src/wallet
@@ -192,6 +196,8 @@ target_include_directories(${EXECUTABLE} PRIVATE
         $<$<BOOL:UNIT_TESTS_SWITCH>:${PROJECT_SOURCE_DIR}/tests/apps/xrp_app>
         $<$<BOOL:UNIT_TESTS_SWITCH>:${PROJECT_SOURCE_DIR}/tests/apps/constellation_app>
         $<$<BOOL:UNIT_TESTS_SWITCH>:${PROJECT_SOURCE_DIR}/tests/apps/icp_app>
+        $<$<BOOL:UNIT_TESTS_SWITCH>:${PROJECT_SOURCE_DIR}/tests/apps/stellar_app>
+        $<$<BOOL:UNIT_TESTS_SWITCH>:${PROJECT_SOURCE_DIR}/tests/apps/sia_app>
         )
 
 target_compile_options(${EXECUTABLE} PRIVATE
