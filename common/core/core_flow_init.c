@@ -65,9 +65,11 @@
 #include "application_startup.h"
 #include "arbitrum_app.h"
 #include "avalanche_app.h"
+#include "base_app.h"
 #include "bsc_app.h"
 #include "btc_app.h"
 #include "btc_main.h"
+#include "canton_main.h"
 #include "constellation_main.h"
 #include "dash_app.h"
 #include "doge_app.h"
@@ -75,6 +77,7 @@
 #include "evm_main.h"
 #include "exchange_main.h"
 #include "fantom_app.h"
+#include "hyperliquid_app.h"
 #include "icp_main.h"
 #include "inheritance_main.h"
 #include "ltc_app.h"
@@ -85,6 +88,7 @@
 #include "optimism_app.h"
 #include "polygon_app.h"
 #include "restricted_app.h"
+#include "sia_main.h"
 #include "solana_main.h"
 #include "starknet_main.h"
 #include "stellar_main.h"
@@ -193,4 +197,8 @@ void core_init_app_registry() {
   registry_add_app(get_icp_app_desc());
   registry_add_app(get_exchange_app_desc());
   registry_add_app(get_stellar_app_desc());
+  registry_add_app(get_sia_app_desc());
+  registry_add_app(get_canton_app_desc());
+  registry_add_app(get_hyperliquid_app_desc());
+  registry_add_app(get_base_app_desc());
 }
